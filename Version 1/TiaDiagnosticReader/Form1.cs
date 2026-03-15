@@ -391,7 +391,7 @@ namespace TiaDiagnosticGui
             obXml.AppendLine("    </AttributeList>");
             obXml.AppendLine("    <ObjectList>");
 
-            int idx = 1;
+            idx = 1; // Reuse the previously defined idx variable
             int compileUnitId = 3; // Global ID in the XML tree for CompileUnits
             int multiTextId = 4;   // Global ID in the XML tree for MultilingualText
             int uidBase = 20;      // Global UId for FlgNet elements across all networks
