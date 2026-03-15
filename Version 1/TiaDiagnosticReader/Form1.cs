@@ -630,6 +630,16 @@ namespace TiaDiagnosticGui
             try { itemName = item.Name.ToString(); } catch { }
             try { typeId = item.TypeIdentifier.ToString(); } catch { }
 
+            // Filter out non-IO components from generating instances
+            string itemNameLower = itemName.ToLower();
+            if (itemNameLower.Contains("server module") ||
+                itemNameLower.Contains("profinet interface") ||
+                itemNameLower.Contains("card reader/writer") ||
+                itemNameLower.Contains("cpu "))
+            {
+                return; // Exclude
+            }
+
             // Attempt to get HW_IO identifier
             try
             {
