@@ -1,0 +1,5 @@
+C:\Users\Dallas\Desktop\Redundnacy Core Team\Automatic Diagnostics\Version 1\TiaDiagnosticReader\obj\Debug\net8.0-windows\TiaDiagnosticReader.csproj.AssemblyReference.cache
+C:\Users\Dallas\Desktop\Redundnacy Core Team\Automatic Diagnostics\Version 1\TiaDiagnosticReader\obj\Debug\net8.0-windows\TiaDiagnosticReader.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Dallas\Desktop\Redundnacy Core Team\Automatic Diagnostics\Version 1\TiaDiagnosticReader\obj\Debug\net8.0-windows\TiaDiagnosticReader.AssemblyInfoInputs.cache
+C:\Users\Dallas\Desktop\Redundnacy Core Team\Automatic Diagnostics\Version 1\TiaDiagnosticReader\obj\Debug\net8.0-windows\TiaDiagnosticReader.AssemblyInfo.cs
+C:\Users\Dallas\Desktop\Redundnacy Core Team\Automatic Diagnostics\Version 1\TiaDiagnosticReader\obj\Debug\net8.0-windows\TiaDiagnosticReader.csproj.CoreCompileInputs.cache
