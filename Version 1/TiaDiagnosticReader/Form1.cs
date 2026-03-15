@@ -37,6 +37,7 @@ namespace TiaDiagnosticGui
             this.Size = new System.Drawing.Size(1000, 800);
             this.csvReportData = new List<string>();
             this.diagnosticModules = new List<DiagnosticModuleInfo>();
+            this.ioSystemToPlc = new Dictionary<string, string>();
 
             btnConnect = new Button();
             btnConnect.Text = "Connect & Scan All";
