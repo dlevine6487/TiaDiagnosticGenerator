@@ -366,6 +366,9 @@ namespace TiaDiagnosticGui
             tagsS7dcl.AppendLine("    DATA_BLOCK Tags");
             tagsS7dcl.AppendLine("        VAR");
 
+            // Add counter for OB82 executions
+            tagsS7dcl.AppendLine("            ob82counter : DInt;");
+
             // Generate array for output statuses
             if (stationModules.Count > 0)
             {
@@ -565,6 +568,89 @@ namespace TiaDiagnosticGui
 
                 idx++;
             }
+
+            // Final rung for ob82counter increment
+            obXml.AppendLine($"      <SW.Blocks.CompileUnit ID=\"{compileUnitId:X}\" CompositionName=\"CompileUnits\">");
+            obXml.AppendLine("        <AttributeList>");
+            obXml.AppendLine("          <NetworkSource><FlgNet xmlns=\"http://www.siemens.com/automation/Openness/SW/NetworkSource/FlgNet/v5\">");
+            obXml.AppendLine("  <Parts>");
+
+            // Access ob82counter tag
+            obXml.AppendLine($"    <Access Scope=\"GlobalVariable\" UId=\"{uidBase + 1}\">");
+            obXml.AppendLine("      <Symbol>");
+            obXml.AppendLine("        <Component Name=\"Tags\" />");
+            obXml.AppendLine("        <Component Name=\"ob82counter\" />");
+            obXml.AppendLine("      </Symbol>");
+            obXml.AppendLine("    </Access>");
+
+            obXml.AppendLine($"    <Access Scope=\"GlobalVariable\" UId=\"{uidBase + 2}\">");
+            obXml.AppendLine("      <Symbol>");
+            obXml.AppendLine("        <Component Name=\"Tags\" />");
+            obXml.AppendLine("        <Component Name=\"ob82counter\" />");
+            obXml.AppendLine("      </Symbol>");
+            obXml.AppendLine("    </Access>");
+
+            obXml.AppendLine($"    <Access Scope=\"LiteralConstant\" UId=\"{uidBase + 3}\">");
+            obXml.AppendLine("      <Constant>");
+            obXml.AppendLine("        <ConstantType>DInt</ConstantType>");
+            obXml.AppendLine("        <ConstantValue>1</ConstantValue>");
+            obXml.AppendLine("      </Constant>");
+            obXml.AppendLine("    </Access>");
+
+            obXml.AppendLine($"    <Part Name=\"Add\" UId=\"{uidBase + 4}\" DisabledENO=\"true\">");
+            obXml.AppendLine("      <TemplateValue Name=\"Card\" Type=\"Cardinality\">2</TemplateValue>");
+            obXml.AppendLine("    </Part>");
+
+            obXml.AppendLine("  </Parts>");
+            obXml.AppendLine("  <Wires>");
+
+            obXml.AppendLine($"    <Wire UId=\"{uidBase + 5}\">");
+            obXml.AppendLine($"      <OpenCon UId=\"{uidBase + 6}\" />");
+            obXml.AppendLine($"      <NameCon UId=\"{uidBase + 4}\" Name=\"en\" />");
+            obXml.AppendLine("    </Wire>");
+
+            obXml.AppendLine($"    <Wire UId=\"{uidBase + 7}\">");
+            obXml.AppendLine($"      <IdentCon UId=\"{uidBase + 1}\" />");
+            obXml.AppendLine($"      <NameCon UId=\"{uidBase + 4}\" Name=\"in1\" />");
+            obXml.AppendLine("    </Wire>");
+
+            obXml.AppendLine($"    <Wire UId=\"{uidBase + 8}\">");
+            obXml.AppendLine($"      <IdentCon UId=\"{uidBase + 3}\" />");
+            obXml.AppendLine($"      <NameCon UId=\"{uidBase + 4}\" Name=\"in2\" />");
+            obXml.AppendLine("    </Wire>");
+
+            obXml.AppendLine($"    <Wire UId=\"{uidBase + 9}\">");
+            obXml.AppendLine($"      <NameCon UId=\"{uidBase + 4}\" Name=\"out\" />");
+            obXml.AppendLine($"      <IdentCon UId=\"{uidBase + 2}\" />");
+            obXml.AppendLine("    </Wire>");
+
+            obXml.AppendLine("  </Wires>");
+            obXml.AppendLine("</FlgNet></NetworkSource>");
+            obXml.AppendLine("          <ProgrammingLanguage>FBD</ProgrammingLanguage>");
+            obXml.AppendLine("        </AttributeList>");
+            obXml.AppendLine("        <ObjectList>");
+            obXml.AppendLine($"          <MultilingualText ID=\"{multiTextId:X}\" CompositionName=\"Comment\">");
+            obXml.AppendLine("            <ObjectList>");
+            obXml.AppendLine($"              <MultilingualTextItem ID=\"{(multiTextId+1):X}\" CompositionName=\"Items\">");
+            obXml.AppendLine("                <AttributeList>");
+            obXml.AppendLine("                  <Culture>en-US</Culture>");
+            obXml.AppendLine("                  <Text />");
+            obXml.AppendLine("                </AttributeList>");
+            obXml.AppendLine("              </MultilingualTextItem>");
+            obXml.AppendLine("            </ObjectList>");
+            obXml.AppendLine("          </MultilingualText>");
+            obXml.AppendLine($"          <MultilingualText ID=\"{(multiTextId+2):X}\" CompositionName=\"Title\">");
+            obXml.AppendLine("            <ObjectList>");
+            obXml.AppendLine($"              <MultilingualTextItem ID=\"{(multiTextId+3):X}\" CompositionName=\"Items\">");
+            obXml.AppendLine("                <AttributeList>");
+            obXml.AppendLine("                  <Culture>en-US</Culture>");
+            obXml.AppendLine($"                  <Text>Network {idx}: Error Counter</Text>");
+            obXml.AppendLine("                </AttributeList>");
+            obXml.AppendLine("              </MultilingualTextItem>");
+            obXml.AppendLine("            </ObjectList>");
+            obXml.AppendLine("          </MultilingualText>");
+            obXml.AppendLine("        </ObjectList>");
+            obXml.AppendLine("      </SW.Blocks.CompileUnit>");
 
             obXml.AppendLine("    </ObjectList>");
             obXml.AppendLine("  </SW.Blocks.OB>");
@@ -940,7 +1026,9 @@ namespace TiaDiagnosticGui
             if (itemNameLower.Contains("server module") ||
                 itemNameLower.Contains("profinet interface") ||
                 itemNameLower.Contains("card reader/writer") ||
-                itemNameLower.Contains("cpu "))
+                itemNameLower.Contains("cpu ") ||
+                itemName.Equals(stationName, StringComparison.OrdinalIgnoreCase) ||
+                (typeId != null && typeId.ToLower().Contains("cpu")))
             {
                 return; // Exclude
             }
@@ -951,14 +1039,37 @@ namespace TiaDiagnosticGui
                 dynamic attrs = item.GetAttributeInfos();
                 if (attrs != null)
                 {
+                    bool foundSubMod = false;
                     foreach (var attr in attrs)
                     {
                         if (attr.Name.ToString().Equals("HardwareIdentifier", StringComparison.OrdinalIgnoreCase))
                         {
-                            hwId = item.GetAttribute("HardwareIdentifier").ToString();
-                            break;
+                            if (!foundSubMod)
+                            {
+                                hwId = item.GetAttribute("HardwareIdentifier").ToString();
+                            }
                         }
                     }
+
+                    // Prioritize HW_SubModule system constant if available
+                    try
+                    {
+                        var systemConstants = item.GetService("Siemens.Engineering.HW.Features.SystemConstantsProvider");
+                        if (systemConstants != null)
+                        {
+                            foreach (var constant in systemConstants.SystemConstants)
+                            {
+                                string constType = constant.DataType.ToString();
+                                if (constType.Equals("HW_SubModule", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    hwId = constant.Value.ToString();
+                                    foundSubMod = true;
+                                    break; // Take the first HW_SubModule we find
+                                }
+                            }
+                        }
+                    }
+                    catch { }
                 }
             }
             catch { }

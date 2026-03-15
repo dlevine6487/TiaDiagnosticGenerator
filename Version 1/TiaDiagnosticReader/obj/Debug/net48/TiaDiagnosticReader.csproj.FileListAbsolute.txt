@@ -1,0 +1,5 @@
+/app/Version 1/TiaDiagnosticReader/obj/Debug/net48/TiaDiagnosticReader.GeneratedMSBuildEditorConfig.editorconfig
+/app/Version 1/TiaDiagnosticReader/obj/Debug/net48/TiaDiagnosticReader.AssemblyInfoInputs.cache
+/app/Version 1/TiaDiagnosticReader/obj/Debug/net48/TiaDiagnosticReader.AssemblyInfo.cs
+/app/Version 1/TiaDiagnosticReader/obj/Debug/net48/TiaDiagnosticReader.csproj.CoreCompileInputs.cache
+/app/Version 1/TiaDiagnosticReader/obj/Debug/net48/TiaDiagnosticReader.sourcelink.json
