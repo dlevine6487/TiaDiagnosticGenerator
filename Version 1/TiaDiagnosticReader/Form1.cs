@@ -598,6 +598,7 @@ namespace TiaDiagnosticGui
             obXml.AppendLine("    </Access>");
 
             obXml.AppendLine($"    <Part Name=\"Add\" UId=\"{uidBase + 4}\" DisabledENO=\"true\">");
+            obXml.AppendLine("      <TemplateValue Name=\"SrcType\" Type=\"Type\">DInt</TemplateValue>");
             obXml.AppendLine("      <TemplateValue Name=\"Card\" Type=\"Cardinality\">2</TemplateValue>");
             obXml.AppendLine("    </Part>");
 
