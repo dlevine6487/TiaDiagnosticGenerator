@@ -258,9 +258,9 @@ namespace TiaDiagnosticGui
             fcScl.AppendLine("END_FUNCTION");
             File.WriteAllText(Path.Combine(outDir, "ModuleDiag.scl"), fcScl.ToString());
 
-            // 6. FB 1x00Diag82
+            // 6. FB 1500Diag82
             System.Text.StringBuilder fbScl = new System.Text.StringBuilder();
-            fbScl.AppendLine("FUNCTION_BLOCK \"1x00Diag82\"");
+            fbScl.AppendLine("FUNCTION_BLOCK \"1500Diag82\"");
             fbScl.AppendLine("{ S7_Optimized_Access := 'TRUE' }");
             fbScl.AppendLine("VERSION : 0.1");
             fbScl.AppendLine("   VAR_INPUT");
@@ -318,7 +318,7 @@ namespace TiaDiagnosticGui
             fbScl.AppendLine("      #Diag.multiError := #Diag.errorCounter > 1;");
             fbScl.AppendLine("   END_IF;");
             fbScl.AppendLine("END_FUNCTION_BLOCK");
-            File.WriteAllText(Path.Combine(outDir, "1x00Diag82.scl"), fbScl.ToString());
+            File.WriteAllText(Path.Combine(outDir, "1500Diag82.scl"), fbScl.ToString());
 
             // 7. Data block for tags (Tags.s7dcl)
             System.Text.StringBuilder tagsS7dcl = new System.Text.StringBuilder();
@@ -401,16 +401,17 @@ namespace TiaDiagnosticGui
                 string safeName = System.Text.RegularExpressions.Regex.Replace(mod.ModuleName, @"[^a-zA-Z0-9_]", "");
                 if (string.IsNullOrEmpty(safeName) || char.IsDigit(safeName[0])) safeName = "Mod" + safeName + "_" + idx;
 
-                string hwIdStr = string.IsNullOrEmpty(mod.HardwareIdentifier) ? "0" : mod.HardwareIdentifier;
+                // Map to the TIA Portal generated system constant name (e.g. "AI 5/AQ 2_1" -> "Local~AI_5_AQ_2_1")
+                string sysConstName = "Local~" + mod.ModuleName.Replace(" ", "_").Replace("/", "_").Replace("-", "_");
 
                 obXml.AppendLine($"      <SW.Blocks.CompileUnit ID=\"{compileUnitId:X}\" CompositionName=\"CompileUnits\">");
                 obXml.AppendLine("        <AttributeList>");
                 obXml.AppendLine("          <NetworkSource><FlgNet xmlns=\"http://www.siemens.com/automation/Openness/SW/NetworkSource/FlgNet/v5\">");
                 obXml.AppendLine("  <Parts>");
 
-                // Hardware constant access
+                // Hardware constant access (HW_Submodule system constant string)
                 obXml.AppendLine($"    <Access Scope=\"GlobalConstant\" UId=\"{uidBase + 1}\">");
-                obXml.AppendLine($"      <Constant Name=\"{hwIdStr}\" />"); // E.g., Local~AI_5_AQ_2_1
+                obXml.AppendLine($"      <Constant Name=\"{sysConstName}\" />");
                 obXml.AppendLine("    </Access>");
 
                 // Diag struct access
@@ -443,7 +444,7 @@ namespace TiaDiagnosticGui
 
                 // FB Call
                 obXml.AppendLine($"    <Call UId=\"{uidBase + 3}\">");
-                obXml.AppendLine("      <CallInfo Name=\"1x00Diag82\" BlockType=\"FB\">");
+                obXml.AppendLine("      <CallInfo Name=\"1500Diag82\" BlockType=\"FB\">");
                 obXml.AppendLine($"        <Instance Scope=\"GlobalVariable\" UId=\"{uidBase + 4}\">");
                 obXml.AppendLine($"          <Component Name=\"Inst_{safeName}\" />");
                 obXml.AppendLine("        </Instance>");
@@ -522,7 +523,7 @@ namespace TiaDiagnosticGui
            S7_StandardRetain := ""FALSE"";
            S7_Version := ""0.1""
         }}
-    DATA_BLOCK Inst_{safeName} : ""1x00Diag82""
+    DATA_BLOCK Inst_{safeName} : ""1500Diag82""
     END_DATA_BLOCK";
                 File.WriteAllText(Path.Combine(outDir, $"Inst_{safeName}.s7dcl"), instDb);
 
