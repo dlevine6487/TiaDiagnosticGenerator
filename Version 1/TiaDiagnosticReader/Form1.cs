@@ -20,6 +20,7 @@ namespace TiaDiagnosticGui
         private RichTextBox txtOutput;
         private List<string> csvReportData;
         private List<DiagnosticModuleInfo> diagnosticModules;
+        private Dictionary<string, string> ioSystemToPlc; // Maps IO System Name -> Controlling PLC Name
 
         public class DiagnosticModuleInfo
         {
@@ -577,6 +578,8 @@ namespace TiaDiagnosticGui
             csvReportData.Add("Station,Item,Type,Location,Attribute,Value");
             diagnosticModules.Clear();
             cmbPlcSelect.Items.Clear();
+            if (ioSystemToPlc == null) ioSystemToPlc = new Dictionary<string, string>();
+            ioSystemToPlc.Clear();
 
             btnConnect.Enabled = false;
             Log("Initializing TIA Portal connection on background thread...");
@@ -618,6 +621,15 @@ namespace TiaDiagnosticGui
 
                 Log($"Connected to: {project.Name}");
 
+                Log("\n--- PASS 1: Mapping IO Systems to PLCs ---");
+                foreach (dynamic device in project.Devices) BuildIoSystemMap(device);
+                BuildIoSystemMapForGroups(project.DeviceGroups);
+                if (project.UngroupedDevicesGroup != null)
+                {
+                    foreach (dynamic device in project.UngroupedDevicesGroup.Devices) BuildIoSystemMap(device);
+                }
+
+                Log("\n--- PASS 2: Hardware Audit ---");
                 foreach (dynamic device in project.Devices) WalkDevice(device);
                 ScanGroupsRecursive(project.DeviceGroups);
                 if (project.UngroupedDevicesGroup != null)
@@ -630,6 +642,88 @@ namespace TiaDiagnosticGui
             catch (Exception ex)
             {
                 Log($"Critical Error: {ex.Message}");
+            }
+        }
+
+        private void BuildIoSystemMap(dynamic device)
+        {
+            if (device == null) return;
+            string deviceName = "Unknown";
+            try { deviceName = device.Name.ToString(); } catch { }
+            MapIoSystemsRecursive(device.DeviceItems, deviceName);
+        }
+
+        private void BuildIoSystemMapForGroups(dynamic groups)
+        {
+            if (groups == null) return;
+            foreach (dynamic group in groups)
+            {
+                foreach (dynamic device in group.Devices) BuildIoSystemMap(device);
+                if (group.Groups != null) BuildIoSystemMapForGroups(group.Groups);
+            }
+        }
+
+        private void MapIoSystemsRecursive(dynamic items, string deviceName)
+        {
+            if (items == null) return;
+            foreach (dynamic item in items)
+            {
+                if (item != null)
+                {
+                    try
+                    {
+                        var networkInterface = item.GetService("Siemens.Engineering.HW.Features.NetworkInterface");
+                        if (networkInterface != null)
+                        {
+                            var ioControllers = networkInterface.IoControllers;
+                            if (ioControllers != null)
+                            {
+                                foreach (var controller in ioControllers)
+                                {
+                                    var ioSystem = controller.IoSystem;
+                                    if (ioSystem != null)
+                                    {
+                                        string ioSystemName = ioSystem.Name.ToString();
+                                        if (!ioSystemToPlc.ContainsKey(ioSystemName))
+                                        {
+                                            ioSystemToPlc[ioSystemName] = deviceName;
+                                            Log($"[MAP] IO System '{ioSystemName}' -> PLC '{deviceName}'");
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Handle Profibus DP Masters as well, if applicable
+                            try
+                            {
+                                var dpMasters = networkInterface.DpMasters;
+                                if (dpMasters != null)
+                                {
+                                    foreach (var master in dpMasters)
+                                    {
+                                        var dpSystem = master.DpSystem;
+                                        if (dpSystem != null)
+                                        {
+                                            string dpSystemName = dpSystem.Name.ToString();
+                                            if (!ioSystemToPlc.ContainsKey(dpSystemName))
+                                            {
+                                                ioSystemToPlc[dpSystemName] = deviceName;
+                                                Log($"[MAP] DP System '{dpSystemName}' -> PLC '{deviceName}'");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
+
+                    if (item.DeviceItems != null)
+                    {
+                        MapIoSystemsRecursive(item.DeviceItems, deviceName);
+                    }
+                }
             }
         }
 
@@ -648,8 +742,76 @@ namespace TiaDiagnosticGui
             string stationName = "Unknown";
             try { stationName = device.Name.ToString(); } catch { }
 
+            // Override stationName if this device is part of a mapped IO System
+            stationName = ResolveControllingPlc(device.DeviceItems, stationName);
+
             Log($"\n>>> STATION: {stationName}");
             RecursiveWalk(device.DeviceItems, stationName);
+        }
+
+        private string ResolveControllingPlc(dynamic items, string defaultName)
+        {
+            if (items == null) return defaultName;
+
+            foreach (dynamic item in items)
+            {
+                if (item != null)
+                {
+                    try
+                    {
+                        var networkInterface = item.GetService("Siemens.Engineering.HW.Features.NetworkInterface");
+                        if (networkInterface != null)
+                        {
+                            var ioConnectors = networkInterface.IoConnectors;
+                            if (ioConnectors != null)
+                            {
+                                foreach (var connector in ioConnectors)
+                                {
+                                    var ioSystem = connector.ConnectedToIoSystem;
+                                    if (ioSystem != null)
+                                    {
+                                        string ioSystemName = ioSystem.Name.ToString();
+                                        if (ioSystemToPlc.ContainsKey(ioSystemName))
+                                        {
+                                            return ioSystemToPlc[ioSystemName]; // Return the controlling PLC
+                                        }
+                                    }
+                                }
+                            }
+
+                            try
+                            {
+                                var dpSlaves = networkInterface.DpSlaves;
+                                if (dpSlaves != null)
+                                {
+                                    foreach (var slave in dpSlaves)
+                                    {
+                                        var dpSystem = slave.ConnectedToDpSystem;
+                                        if (dpSystem != null)
+                                        {
+                                            string dpSystemName = dpSystem.Name.ToString();
+                                            if (ioSystemToPlc.ContainsKey(dpSystemName))
+                                            {
+                                                return ioSystemToPlc[dpSystemName];
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
+
+                    if (item.DeviceItems != null)
+                    {
+                        string subResult = ResolveControllingPlc(item.DeviceItems, defaultName);
+                        if (subResult != defaultName) return subResult; // Found a map match deeper down
+                    }
+                }
+            }
+
+            return defaultName;
         }
 
         private void RecursiveWalk(dynamic items, string stationName)
