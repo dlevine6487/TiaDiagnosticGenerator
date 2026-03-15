@@ -1,0 +1,6 @@
+﻿MultiLingualTexts:
+  - id: MLC_4C8
+    en-US: Format identifier for the structure of the following data serving as additional interrupt information
+  - id: MLC_3md
+    en-US: Channel number of the component triggering the interrupt
+  

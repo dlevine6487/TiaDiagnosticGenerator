@@ -1,0 +1,10 @@
+﻿    TYPE
+        typeChannel : STRUCT
+        { S7_MLC := "MLC_388" }
+        chMax : SInt := 1;
+        { S7_MLC := "MLC_TJ" }
+        areaLenError : Bool;
+        { S7_MLC := "MLC_4ad" }
+        ch : Array[0..4] of _.typeChannelDiag;
+        END_STRUCT;
+    END_TYPE

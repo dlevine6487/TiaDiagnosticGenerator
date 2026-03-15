@@ -1,0 +1,397 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Document>
+  <Engineering version="V20" />
+  <SW.Blocks.FC ID="0">
+    <AttributeList>
+      <HeaderVersion>1.1</HeaderVersion>
+      <Interface><Sections xmlns="http://www.siemens.com/automation/Openness/SW/Interface/v5">
+  <Section Name="Input">
+    <Member Name="errorCode" Datatype="Word">
+      <Comment>
+        <MultiLanguageText Lang="en-US">Code of error</MultiLanguageText>
+      </Comment>
+    </Member>
+    <Member Name="value" Datatype="Bool">
+      <Comment>
+        <MultiLanguageText Lang="en-US">TRUE for incoming / FALSE for outgoing</MultiLanguageText>
+      </Comment>
+    </Member>
+  </Section>
+  <Section Name="Output" />
+  <Section Name="InOut">
+    <Member Name="diag" Datatype="&quot;typeModuleDiag&quot;">
+      <Comment>
+        <MultiLanguageText Lang="en-US">Diagnostics by module</MultiLanguageText>
+      </Comment>
+    </Member>
+    <Member Name="errorCounter" Datatype="USInt">
+      <Comment>
+        <MultiLanguageText Lang="en-US">Error counter (different errors only)</MultiLanguageText>
+      </Comment>
+    </Member>
+  </Section>
+  <Section Name="Temp" />
+  <Section Name="Constant" />
+  <Section Name="Return">
+    <Member Name="Ret_Val" Datatype="Void" />
+  </Section>
+</Sections></Interface>
+      <MemoryLayout>Optimized</MemoryLayout>
+      <Name>ModuleDiag</Name>
+      <Namespace />
+      <Number>82</Number>
+      <ProgrammingLanguage>SCL</ProgrammingLanguage>
+      <SetENOAutomatically>false</SetENOAutomatically>
+    </AttributeList>
+    <ObjectList>
+      <MultilingualText ID="1" CompositionName="Comment">
+        <ObjectList>
+          <MultilingualTextItem ID="2" CompositionName="Items">
+            <AttributeList>
+              <Culture>en-US</Culture>
+              <Text />
+            </AttributeList>
+          </MultilingualTextItem>
+        </ObjectList>
+      </MultilingualText>
+      <SW.Blocks.CompileUnit ID="3" CompositionName="CompileUnits">
+        <AttributeList>
+          <NetworkSource><StructuredText xmlns="http://www.siemens.com/automation/Openness/SW/NetworkSource/StructuredText/v4">
+  <LineComment UId="21">
+    <Text UId="22">=============================================================================</Text>
+  </LineComment>
+  <NewLine UId="23" />
+  <LineComment UId="24">
+    <Text UId="25"> SIEMENS AG</Text>
+  </LineComment>
+  <NewLine UId="26" />
+  <LineComment UId="27">
+    <Text UId="28"> (c)Copyright 2017</Text>
+  </LineComment>
+  <NewLine UId="29" />
+  <LineComment UId="30">
+    <Text UId="31">-----------------------------------------------------------------------------</Text>
+  </LineComment>
+  <NewLine UId="32" />
+  <LineComment UId="33">
+    <Text UId="34"> Library:       -</Text>
+  </LineComment>
+  <NewLine UId="35" />
+  <LineComment UId="36">
+    <Text UId="37"> Tested with:   CPU 1211C FW V4.2 and ET200SP (IM 155-6 PN BA + AQ 4xU/I ST)</Text>
+  </LineComment>
+  <NewLine UId="38" />
+  <LineComment UId="39">
+    <Text UId="40"> Engineering:   TIA Portal V14 Update1</Text>
+  </LineComment>
+  <NewLine UId="41" />
+  <LineComment UId="42">
+    <Text UId="43"> Restrictions:  call in FB "1x00Diag82"</Text>
+  </LineComment>
+  <NewLine UId="44" />
+  <LineComment UId="45">
+    <Text UId="46"> Requirements:  SIMATIC S7-1200 or S7-1500 CPU</Text>
+  </LineComment>
+  <NewLine UId="47" />
+  <LineComment UId="48">
+    <Text UId="49"> Functionality: Module diagnostics (PROFINET IO or central I/O)</Text>
+  </LineComment>
+  <NewLine UId="50" />
+  <LineComment UId="51">
+    <Text UId="52">-----------------------------------------------------------------------------</Text>
+  </LineComment>
+  <NewLine UId="53" />
+  <LineComment UId="54">
+    <Text UId="55"> Change log table:</Text>
+  </LineComment>
+  <NewLine UId="56" />
+  <LineComment UId="57">
+    <Text UId="58"> Version  Date        Expert in charge                 Changes applied</Text>
+  </LineComment>
+  <NewLine UId="59" />
+  <LineComment UId="60">
+    <Text UId="61"> 02.00.00 12.01.2016  SIMATIC Industry Online Support  New function: ModuleDiag</Text>
+  </LineComment>
+  <NewLine UId="62" />
+  <LineComment UId="63">
+    <Text UId="64">=============================================================================</Text>
+  </LineComment>
+  <NewLine Num="2" UId="65" />
+  <Token Text="CASE" UId="66" />
+  <Blank UId="67" />
+  <Access Scope="Call" UId="68">
+    <Instruction Name="WORD_TO_INT" UId="69">
+      <Token Text="(" UId="70" />
+      <NamelessParameter UId="71">
+        <Access Scope="LocalVariable" UId="72">
+          <Symbol UId="73">
+            <Component Name="errorCode" UId="74" />
+          </Symbol>
+        </Access>
+      </NamelessParameter>
+      <Token Text=")" UId="76" />
+    </Instruction>
+  </Access>
+  <Blank UId="77" />
+  <Token Text="OF" UId="78" />
+  <Blank UId="79" />
+  <LineComment UId="80">
+    <Text UId="81"> errorCode identifier</Text>
+  </LineComment>
+  <NewLine UId="82" />
+  <Blank Num="2" UId="83" />
+  <Access Scope="LiteralConstant" UId="84">
+    <Constant UId="85">
+      <ConstantValue UId="87">1</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=":" UId="88" />
+  <NewLine UId="89" />
+  <Blank Num="4" UId="90" />
+  <Access Scope="LocalVariable" UId="91">
+    <Symbol UId="92">
+      <Component Name="diag" UId="93" />
+      <Token Text="." UId="94" />
+      <Component Name="shortCircuit" UId="95" />
+    </Symbol>
+  </Access>
+  <Blank UId="96" />
+  <Token Text=":=" UId="97" />
+  <Blank UId="98" />
+  <Access Scope="LocalVariable" UId="99">
+    <Symbol UId="100">
+      <Component Name="value" UId="101" />
+    </Symbol>
+  </Access>
+  <Token Text=";" UId="102" />
+  <NewLine UId="103" />
+  <Blank Num="4" UId="104" />
+  <NewLine UId="105" />
+  <Blank Num="2" UId="106" />
+  <Access Scope="LiteralConstant" UId="107">
+    <Constant UId="108">
+      <ConstantValue UId="110">6</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=":" UId="111" />
+  <NewLine UId="112" />
+  <Blank Num="4" UId="113" />
+  <Access Scope="LocalVariable" UId="114">
+    <Symbol UId="115">
+      <Component Name="diag" UId="116" />
+      <Token Text="." UId="117" />
+      <Component Name="wireBreak" UId="118" />
+    </Symbol>
+  </Access>
+  <Blank UId="119" />
+  <Token Text=":=" UId="120" />
+  <Blank UId="121" />
+  <Access Scope="LocalVariable" UId="122">
+    <Symbol UId="123">
+      <Component Name="value" UId="124" />
+    </Symbol>
+  </Access>
+  <Token Text=";" UId="125" />
+  <NewLine UId="126" />
+  <Blank Num="4" UId="127" />
+  <NewLine UId="128" />
+  <Blank Num="2" UId="129" />
+  <Access Scope="LiteralConstant" UId="130">
+    <Constant UId="131">
+      <ConstantValue UId="133">7</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=":" UId="134" />
+  <NewLine UId="135" />
+  <Blank Num="4" UId="136" />
+  <Access Scope="LocalVariable" UId="137">
+    <Symbol UId="138">
+      <Component Name="diag" UId="139" />
+      <Token Text="." UId="140" />
+      <Component Name="highLimitExceeded" UId="141" />
+    </Symbol>
+  </Access>
+  <Blank UId="142" />
+  <Token Text=":=" UId="143" />
+  <Blank UId="144" />
+  <Access Scope="LocalVariable" UId="145">
+    <Symbol UId="146">
+      <Component Name="value" UId="147" />
+    </Symbol>
+  </Access>
+  <Token Text=";" UId="148" />
+  <NewLine UId="149" />
+  <Blank Num="4" UId="150" />
+  <NewLine UId="151" />
+  <Blank Num="2" UId="152" />
+  <Access Scope="LiteralConstant" UId="153">
+    <Constant UId="154">
+      <ConstantValue UId="156">8</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=":" UId="157" />
+  <NewLine UId="158" />
+  <Blank Num="4" UId="159" />
+  <Access Scope="LocalVariable" UId="160">
+    <Symbol UId="161">
+      <Component Name="diag" UId="162" />
+      <Token Text="." UId="163" />
+      <Component Name="lowLimitExceeded" UId="164" />
+    </Symbol>
+  </Access>
+  <Blank UId="165" />
+  <Token Text=":=" UId="166" />
+  <Blank UId="167" />
+  <Access Scope="LocalVariable" UId="168">
+    <Symbol UId="169">
+      <Component Name="value" UId="170" />
+    </Symbol>
+  </Access>
+  <Token Text=";" UId="171" />
+  <NewLine UId="172" />
+  <Blank Num="4" UId="173" />
+  <NewLine UId="174" />
+  <Blank Num="2" UId="175" />
+  <Access Scope="LiteralConstant" UId="176">
+    <Constant UId="177">
+      <ConstantValue UId="179">17</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=":" UId="180" />
+  <NewLine UId="181" />
+  <Blank Num="4" UId="182" />
+  <Access Scope="LocalVariable" UId="183">
+    <Symbol UId="184">
+      <Component Name="diag" UId="185" />
+      <Token Text="." UId="186" />
+      <Component Name="noSupplyVoltage" UId="187" />
+    </Symbol>
+  </Access>
+  <Blank UId="188" />
+  <Token Text=":=" UId="189" />
+  <Blank UId="190" />
+  <Access Scope="LocalVariable" UId="191">
+    <Symbol UId="192">
+      <Component Name="value" UId="193" />
+    </Symbol>
+  </Access>
+  <Token Text=";" UId="194" />
+  <NewLine UId="195" />
+  <Token Text="END_CASE" UId="196" />
+  <Token Text=";" UId="197" />
+  <NewLine Num="2" UId="198" />
+  <Token Text="IF" UId="199" />
+  <Blank UId="200" />
+  <Token Text="(" UId="201" />
+  <Access Scope="LocalVariable" UId="202">
+    <Symbol UId="203">
+      <Component Name="value" UId="204" />
+    </Symbol>
+  </Access>
+  <Blank UId="205" />
+  <Token Text="=" UId="206" />
+  <Blank UId="207" />
+  <Access Scope="LiteralConstant" UId="208">
+    <Constant UId="209">
+      <ConstantValue UId="211">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="212" />
+  <Blank UId="213" />
+  <Token Text="THEN" UId="214" />
+  <Blank UId="215" />
+  <LineComment UId="216">
+    <Text UId="217"> errorCounter (different errors only)</Text>
+  </LineComment>
+  <NewLine UId="218" />
+  <Blank Num="2" UId="219" />
+  <Access Scope="LocalVariable" UId="220">
+    <Symbol UId="221">
+      <Component Name="errorCounter" UId="222" />
+    </Symbol>
+  </Access>
+  <Blank UId="223" />
+  <Token Text=":=" UId="224" />
+  <Blank UId="225" />
+  <Access Scope="LocalVariable" UId="226">
+    <Symbol UId="227">
+      <Component Name="errorCounter" UId="228" />
+    </Symbol>
+  </Access>
+  <Blank UId="229" />
+  <Token Text="+" UId="230" />
+  <Blank UId="231" />
+  <Access Scope="LiteralConstant" UId="232">
+    <Constant UId="233">
+      <ConstantValue UId="235">1</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="236" />
+  <NewLine UId="237" />
+  <Token Text="ELSE" UId="238" />
+  <NewLine UId="239" />
+  <Blank Num="2" UId="240" />
+  <Access Scope="LocalVariable" UId="241">
+    <Symbol UId="242">
+      <Component Name="errorCounter" UId="243" />
+    </Symbol>
+  </Access>
+  <Blank UId="244" />
+  <Token Text=":=" UId="245" />
+  <Blank UId="246" />
+  <Access Scope="LocalVariable" UId="247">
+    <Symbol UId="248">
+      <Component Name="errorCounter" UId="249" />
+    </Symbol>
+  </Access>
+  <Blank UId="250" />
+  <Token Text="-" UId="251" />
+  <Blank UId="252" />
+  <Access Scope="LiteralConstant" UId="253">
+    <Constant UId="254">
+      <ConstantValue UId="256">1</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="257" />
+  <NewLine UId="258" />
+  <Token Text="END_IF" UId="259" />
+  <Token Text=";" UId="260" />
+</StructuredText></NetworkSource>
+          <ProgrammingLanguage>SCL</ProgrammingLanguage>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="4" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="5" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text />
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+          <MultilingualText ID="6" CompositionName="Title">
+            <ObjectList>
+              <MultilingualTextItem ID="7" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text />
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Blocks.CompileUnit>
+      <MultilingualText ID="8" CompositionName="Title">
+        <ObjectList>
+          <MultilingualTextItem ID="9" CompositionName="Items">
+            <AttributeList>
+              <Culture>en-US</Culture>
+              <Text />
+            </AttributeList>
+          </MultilingualTextItem>
+        </ObjectList>
+      </MultilingualText>
+    </ObjectList>
+  </SW.Blocks.FC>
+</Document>

@@ -1,0 +1,8 @@
+﻿    TYPE
+        typeChannelDiag : STRUCT
+        { S7_MLC := "MLC_4wT" }
+        error : Bool;
+        { S7_MLC := "MLC_iP" }
+        errorCode : Word;
+        END_STRUCT;
+    END_TYPE

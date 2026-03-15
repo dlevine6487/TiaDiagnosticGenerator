@@ -1,0 +1,8 @@
+﻿MultiLingualTexts:
+  - id: MLC_iB
+    en-US: Last channel of module in- or output
+  - id: MLC_4it
+    en-US: Area length error
+  - id: MLC_4V4
+    en-US: Channel diagnostics
+  

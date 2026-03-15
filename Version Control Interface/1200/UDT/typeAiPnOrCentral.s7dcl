@@ -1,0 +1,8 @@
+﻿    TYPE
+        typeAiPnOrCentral : STRUCT
+        { S7_MLC := "MLC_3QJ" }
+        header : _.typeHeader;
+        { S7_MLC := "MLC_3Kx" }
+        addInfo : _.typeAddInfo;
+        END_STRUCT;
+    END_TYPE

@@ -1,0 +1,10 @@
+﻿MultiLingualTexts:
+  - id: MLC_34b
+    en-US: Channel number of the component triggering the interrupt
+  - id: MLC_Ud
+    en-US: Type of channel / Type of error
+  - id: MLC_3Hh
+    en-US: Data format
+  - id: MLC_4A4
+    en-US: Code of error
+  

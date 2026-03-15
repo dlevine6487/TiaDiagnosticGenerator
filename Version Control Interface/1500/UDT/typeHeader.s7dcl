@@ -1,0 +1,24 @@
+﻿    TYPE
+        typeHeader : STRUCT
+        { S7_MLC := "MLC_553" }
+        blockType : Word;
+        { S7_MLC := "MLC_3Vt" }
+        blockLength : UInt;
+        { S7_MLC := "MLC_54m" }
+        "version" : Word;
+        { S7_MLC := "MLC_4VA" }
+        interruptType : UInt;
+        { S7_MLC := "MLC_4KU" }
+        api : DWord;
+        { S7_MLC := "MLC_58f" }
+        slotNumber : UInt;
+        { S7_MLC := "MLC_yq" }
+        submoduleSlotNumber : UInt;
+        { S7_MLC := "MLC_53u" }
+        moduleIdentification : DWord;
+        { S7_MLC := "MLC_3k8" }
+        submoduleIdentification : DWord;
+        { S7_MLC := "MLC_ca" }
+        interruptSpecifier : Word;
+        END_STRUCT;
+    END_TYPE

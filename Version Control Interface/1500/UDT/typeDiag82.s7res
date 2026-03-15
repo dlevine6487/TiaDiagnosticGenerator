@@ -1,0 +1,12 @@
+﻿MultiLingualTexts:
+  - id: MLC_e5
+    en-US: A new interrupt was received.
+  - id: MLC_3Hc
+    en-US: Function result/error message
+  - id: MLC_4ee
+    en-US: HW-Id of the component (module) from which an interrupt was received
+  - id: MLC_4Q2
+    en-US: Length of the received interrupt information
+  - id: MLC_3aH
+    en-US: Area length error
+  

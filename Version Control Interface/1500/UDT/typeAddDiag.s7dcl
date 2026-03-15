@@ -1,0 +1,12 @@
+﻿    TYPE
+        typeAddDiag : STRUCT
+        { S7_MLC := "MLC_34b" }
+        channelNumber : Int;
+        { S7_MLC := "MLC_Ud" }
+        channelErrorType : Byte;
+        { S7_MLC := "MLC_3Hh" }
+        dataFormat : Byte;
+        { S7_MLC := "MLC_4A4" }
+        errorCode : Word;
+        END_STRUCT;
+    END_TYPE

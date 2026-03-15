@@ -1,0 +1,23 @@
+﻿        {
+           S7_Optimized := "TRUE";
+           S7_StandardRetain := "FALSE";
+           S7_Version := "0.1"
+        }
+    DATA_BLOCK Tags
+        VAR
+            { S7_MLC := "MLC_59N" }
+            diag82 : Array[1..2] of _.typeDiag82;
+            { S7_MLC := "MLC_3ZQ" }
+            ai5Aq2 : _.typeDiag;
+            { S7_MLC := "MLC_i8" }
+            di16Dq16 : _.typeDiag;
+            { S7_MLC := "MLC_53j" }
+            ob82counter : SInt;
+        END_VAR
+
+        ai5Aq2.input.channel.chMax := 4;
+        ai5Aq2.output.channel.chMax := 1;
+        di16Dq16.input.channel.chMax := 16;
+        di16Dq16.output.channel.chMax := 16;
+
+    END_DATA_BLOCK

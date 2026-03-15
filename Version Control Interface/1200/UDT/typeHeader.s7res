@@ -1,0 +1,22 @@
+﻿MultiLingualTexts:
+  - id: MLC_3AT
+    en-US: Block type
+  - id: MLC_4Me
+    en-US: Block length
+  - id: MLC_54N
+    en-US: Version
+  - id: MLC_4e8
+    en-US: ID for interrupt type
+  - id: MLC_3vF
+    en-US: API (Application Process Identifier)
+  - id: MLC_4jt
+    en-US: Slot number of the component triggering the interrupt
+  - id: MLC_4ey
+    en-US: Submodule slot number of the component triggering the interrupt
+  - id: MLC_45S
+    en-US: Module identification; specific information on the source of the interrupt
+  - id: MLC_4kX
+    en-US: Submodule identification; specific information on the source of the interrupt
+  - id: MLC_VJ
+    en-US: Interrupt specifier
+  

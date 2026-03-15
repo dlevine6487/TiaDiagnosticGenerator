@@ -1,0 +1,20 @@
+﻿MultiLingualTexts:
+  - id: MLC_bL
+    en-US: At least one error exists.
+  - id: MLC_4jR
+    en-US: =TRUE, if there is more than one error.
+  - id: MLC_3jX
+    en-US: Error counter
+  - id: MLC_3SG
+    en-US: Slot number of the component triggering the interrupt (value range 0 to 65535)
+  - id: MLC_dE
+    en-US: Submodule slot number of the component triggering the interrupt
+  - id: MLC_3jw
+    en-US: Module supports module diagnostics only.
+  - id: MLC_4LX
+    en-US: ' Input channel diagnostics'
+  - id: MLC_3W4
+    en-US: ' Output channel diagnostics'
+  - id: MLC_4AZ
+    en-US: ' In/Output channel diagnostics'
+  

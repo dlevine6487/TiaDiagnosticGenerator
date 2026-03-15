@@ -1,0 +1,8 @@
+﻿    TYPE
+        typeAddInfo : STRUCT
+        { S7_MLC := "MLC_4aJ" }
+        formatIdentifier : Word;
+        { S7_MLC := "MLC_55c" }
+        diag : Array[0..233] of _.typeAddDiag;
+        END_STRUCT;
+    END_TYPE

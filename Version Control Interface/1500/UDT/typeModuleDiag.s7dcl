@@ -1,0 +1,9 @@
+﻿    TYPE
+        typeModuleDiag : STRUCT
+        shortCircuit : Bool;
+        wireBreak : Bool;
+        highLimitExceeded : Bool;
+        lowLimitExceeded : Bool;
+        noSupplyVoltage : Bool;
+        END_STRUCT;
+    END_TYPE

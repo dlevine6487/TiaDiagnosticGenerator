@@ -1,0 +1,22 @@
+﻿    TYPE
+        typeDiag : STRUCT
+        { S7_MLC := "MLC_4Xb" }
+        error : Bool;
+        { S7_MLC := "MLC_fH" }
+        multiError : Bool;
+        { S7_MLC := "MLC_32y" }
+        errorCounter : USInt;
+        { S7_MLC := "MLC_4dM" }
+        slotNumber : UInt;
+        { S7_MLC := "MLC_4ru" }
+        submoduleSlotNumber : UInt;
+        { S7_MLC := "MLC_3XJ" }
+        moduleDiagOnly : Bool;
+        { S7_MLC := "MLC_3RV" }
+        input : _.typeChannelType;
+        { S7_MLC := "MLC_gn" }
+        output : _.typeChannelType;
+        { S7_MLC := "MLC_4tE" }
+        inOut : _.typeChannelType;
+        END_STRUCT;
+    END_TYPE

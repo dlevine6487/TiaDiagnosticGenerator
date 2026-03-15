@@ -1,0 +1,20 @@
+﻿        {
+           S7_Optimized := "TRUE";
+           S7_StandardRetain := "FALSE";
+           S7_Version := "0.1"
+        }
+    DATA_BLOCK Tags
+        VAR
+            { S7_MLC := "MLC_5BB" }
+            diag82 : Array[1..2] of _.typeDiag82;
+            { S7_MLC := "MLC_pR" }
+            et200sp2aqHf : _.typeDiag;
+            { S7_MLC := "MLC_4Xw" }
+            et200sp4aqSt : _.typeDiag;
+            { S7_MLC := "MLC_4KB" }
+            ob82counter : USInt;
+        END_VAR
+
+        et200sp2aqHf.output.channel.chMax := 1;
+
+    END_DATA_BLOCK

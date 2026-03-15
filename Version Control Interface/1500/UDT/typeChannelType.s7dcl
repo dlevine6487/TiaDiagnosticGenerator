@@ -1,0 +1,8 @@
+﻿    TYPE
+        typeChannelType : STRUCT
+        { S7_MLC := "MLC_3CC" }
+        channel : _.typeChannel;
+        { S7_MLC := "MLC_4tk" }
+        module : _.typeModuleDiag;
+        END_STRUCT;
+    END_TYPE

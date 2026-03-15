@@ -1,0 +1,14 @@
+﻿    TYPE
+        typeDiag82 : STRUCT
+        { S7_MLC := "MLC_e5" }
+        new : Bool;
+        { S7_MLC := "MLC_3Hc" }
+        status : DWord;
+        { S7_MLC := "MLC_4ee" }
+        "id" : HW_IO;
+        { S7_MLC := "MLC_4Q2" }
+        "len" : UInt;
+        { S7_MLC := "MLC_3aH" }
+        areaLenError : Bool;
+        END_STRUCT;
+    END_TYPE

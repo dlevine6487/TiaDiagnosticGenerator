@@ -1,0 +1,10 @@
+﻿MultiLingualTexts:
+  - id: MLC_5BB
+    en-US: outputs of FB "Diag82"
+  - id: MLC_pR
+    en-US: Diagnostic data
+  - id: MLC_4Xw
+    en-US: Diagnostic data
+  - id: MLC_4KB
+    en-US: counts the OB82 calls
+  

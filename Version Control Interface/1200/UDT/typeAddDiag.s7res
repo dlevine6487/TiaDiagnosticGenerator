@@ -1,0 +1,10 @@
+﻿MultiLingualTexts:
+  - id: MLC_48X
+    en-US: Channel number of the component triggering the interrupt
+  - id: MLC_43R
+    en-US: Type of channel / Type of error
+  - id: MLC_4rK
+    en-US: Data format
+  - id: MLC_56F
+    en-US: Code of error
+  

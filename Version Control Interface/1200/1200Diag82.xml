@@ -1,0 +1,4611 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Document>
+  <Engineering version="V20" />
+  <SW.Blocks.FB ID="0">
+    <AttributeList>
+      <HeaderVersion>1.1</HeaderVersion>
+      <Interface><Sections xmlns="http://www.siemens.com/automation/Openness/SW/Interface/v5">
+  <Section Name="Input">
+    <Member Name="fId" Datatype="HW_IO">
+      <Comment>
+        <MultiLanguageText Lang="en-US">HW-Id of the component from which interrupts are to be received</MultiLanguageText>
+      </Comment>
+    </Member>
+  </Section>
+  <Section Name="Output">
+    <Member Name="new" Datatype="Bool">
+      <Comment>
+        <MultiLanguageText Lang="en-US">A new interrupt was received.</MultiLanguageText>
+      </Comment>
+    </Member>
+    <Member Name="status" Datatype="DWord">
+      <Comment>
+        <MultiLanguageText Lang="en-US">Function result/error message</MultiLanguageText>
+      </Comment>
+    </Member>
+    <Member Name="id" Datatype="HW_IO">
+      <Comment>
+        <MultiLanguageText Lang="en-US">HW-Id of the component (module) from which an interrupt was received</MultiLanguageText>
+      </Comment>
+    </Member>
+    <Member Name="len" Datatype="UInt">
+      <Comment>
+        <MultiLanguageText Lang="en-US">Length of the received interrupt information</MultiLanguageText>
+      </Comment>
+    </Member>
+    <Member Name="areaLenError" Datatype="Bool">
+      <Comment>
+        <MultiLanguageText Lang="en-US">Area length error</MultiLanguageText>
+      </Comment>
+    </Member>
+  </Section>
+  <Section Name="InOut">
+    <Member Name="diag" Datatype="&quot;typeDiag&quot;">
+      <Comment>
+        <MultiLanguageText Lang="en-US">diagnostics data</MultiLanguageText>
+      </Comment>
+    </Member>
+  </Section>
+  <Section Name="Static">
+    <Member Name="statTinfo" Datatype="TI_DiagnosticInterrupt" Version="1.0">
+      <AttributeList>
+        <BooleanAttribute Name="SetPoint" SystemDefined="true">true</BooleanAttribute>
+      </AttributeList>
+      <Comment>
+        <MultiLanguageText Lang="en-US">Destination area for OB start and management information</MultiLanguageText>
+      </Comment>
+    </Member>
+    <Member Name="statAinfo" Datatype="&quot;typeAiPnOrCentral&quot;" Remanence="SetInIDB">
+      <AttributeList>
+        <BooleanAttribute Name="SetPoint" SystemDefined="true">true</BooleanAttribute>
+      </AttributeList>
+      <Comment>
+        <MultiLanguageText Lang="en-US">Destination area for header information and additional interrupt information</MultiLanguageText>
+      </Comment>
+    </Member>
+    <Member Name="statErrorType" Datatype="USInt">
+      <Comment>
+        <MultiLanguageText Lang="en-US">Type of error</MultiLanguageText>
+      </Comment>
+    </Member>
+    <Member Name="statChannelType" Datatype="USInt">
+      <Comment>
+        <MultiLanguageText Lang="en-US">Type of channel</MultiLanguageText>
+      </Comment>
+    </Member>
+    <Member Name="instRalrm" Datatype="RALRM" Version="1.0">
+      <AttributeList>
+        <BooleanAttribute Name="SetPoint" SystemDefined="true">true</BooleanAttribute>
+      </AttributeList>
+      <Comment>
+        <MultiLanguageText Lang="en-US">Instance of RALRM</MultiLanguageText>
+      </Comment>
+    </Member>
+  </Section>
+  <Section Name="Temp">
+    <Member Name="tempInfo" Datatype="SInt" />
+    <Member Name="tempMax" Datatype="SInt" />
+    <Member Name="tempIndex" Datatype="SInt" />
+    <Member Name="tempUsint" Datatype="USInt" />
+    <Member Name="tempReal" Datatype="Real" />
+  </Section>
+  <Section Name="Constant" />
+</Sections></Interface>
+      <MemoryLayout>Optimized</MemoryLayout>
+      <MemoryReserve>100</MemoryReserve>
+      <Name>1200Diag82</Name>
+      <Namespace />
+      <Number>1</Number>
+      <ProgrammingLanguage>SCL</ProgrammingLanguage>
+      <SetENOAutomatically>false</SetENOAutomatically>
+    </AttributeList>
+    <ObjectList>
+      <MultilingualText ID="1" CompositionName="Comment">
+        <ObjectList>
+          <MultilingualTextItem ID="2" CompositionName="Items">
+            <AttributeList>
+              <Culture>en-US</Culture>
+              <Text />
+            </AttributeList>
+          </MultilingualTextItem>
+        </ObjectList>
+      </MultilingualText>
+      <SW.Blocks.CompileUnit ID="3" CompositionName="CompileUnits">
+        <AttributeList>
+          <NetworkSource><StructuredText xmlns="http://www.siemens.com/automation/Openness/SW/NetworkSource/StructuredText/v4">
+  <LineComment UId="21">
+    <Text UId="22">=============================================================================</Text>
+  </LineComment>
+  <NewLine UId="23" />
+  <LineComment UId="24">
+    <Text UId="25"> SIEMENS AG</Text>
+  </LineComment>
+  <NewLine UId="26" />
+  <LineComment UId="27">
+    <Text UId="28"> (c)Copyright 2017</Text>
+  </LineComment>
+  <NewLine UId="29" />
+  <LineComment UId="30">
+    <Text UId="31">-----------------------------------------------------------------------------</Text>
+  </LineComment>
+  <NewLine UId="32" />
+  <LineComment UId="33">
+    <Text UId="34"> Library:       -</Text>
+  </LineComment>
+  <NewLine UId="35" />
+  <LineComment UId="36">
+    <Text UId="37"> Tested with:   CPU 1211C FW V4.2</Text>
+  </LineComment>
+  <NewLine UId="38" />
+  <LineComment UId="39">
+    <Text UId="40"> Engineering:   TIA Portal V14 Update1</Text>
+  </LineComment>
+  <NewLine UId="41" />
+  <LineComment UId="42">
+    <Text UId="43"> Restrictions:  call in Diagnostic Error Interrupt OB 82</Text>
+  </LineComment>
+  <NewLine UId="44" />
+  <LineComment UId="45">
+    <Text UId="46"> Requirements:  SIMATIC S7-1200 CPU</Text>
+  </LineComment>
+  <NewLine UId="47" />
+  <LineComment UId="48">
+    <Text UId="49"> Functionality: Channel diagnostics (PROFINET IO or central I/O)</Text>
+  </LineComment>
+  <NewLine UId="50" />
+  <LineComment UId="51">
+    <Text UId="52">-----------------------------------------------------------------------------</Text>
+  </LineComment>
+  <NewLine UId="53" />
+  <LineComment UId="54">
+    <Text UId="55"> Change log table:</Text>
+  </LineComment>
+  <NewLine UId="56" />
+  <LineComment UId="57">
+    <Text UId="58"> Version  Date        Expert in charge                 Changes applied</Text>
+  </LineComment>
+  <NewLine UId="59" />
+  <LineComment UId="60">
+    <Text UId="61"> 02.00.00 12.01.2017  SIMATIC Industry Online Support  New function: ModuleDiag</Text>
+  </LineComment>
+  <NewLine UId="62" />
+  <LineComment UId="63">
+    <Text UId="64">                                                       &amp; multiple-channelDiag</Text>
+  </LineComment>
+  <NewLine UId="65" />
+  <LineComment UId="66">
+    <Text UId="67">=============================================================================</Text>
+  </LineComment>
+  <NewLine Num="2" UId="68" />
+  <LineComment UId="69">
+    <Text UId="70"> call RALRM in MODE 2 with given F_ID</Text>
+  </LineComment>
+  <NewLine UId="71" />
+  <Access Scope="LocalVariable" UId="72">
+    <Symbol UId="73">
+      <Component Name="instRalrm" UId="74" />
+    </Symbol>
+  </Access>
+  <Access Scope="Call" UId="75">
+    <Instruction UId="76">
+      <Token Text="(" UId="77" />
+      <Parameter Name="MODE" UId="78">
+        <Blank UId="79" />
+        <Token Text=":=" UId="80" />
+        <Blank UId="81" />
+        <Access Scope="LiteralConstant" UId="82">
+          <Constant UId="83">
+            <ConstantValue UId="85">2</ConstantValue>
+          </Constant>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="86" />
+      <NewLine UId="87" />
+      <Blank Num="11" UId="88" />
+      <Parameter Name="F_ID" UId="89">
+        <Blank UId="90" />
+        <Token Text=":=" UId="91" />
+        <Blank UId="92" />
+        <Access Scope="LocalVariable" UId="93">
+          <Symbol UId="94">
+            <Component Name="fId" UId="95" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="96" />
+      <NewLine UId="97" />
+      <Blank Num="11" UId="98" />
+      <Parameter Name="NEW" UId="99">
+        <Blank UId="100" />
+        <Token Text="=&gt;" UId="101" />
+        <Blank UId="102" />
+        <Access Scope="LocalVariable" UId="103">
+          <Symbol UId="104">
+            <Component Name="new" UId="105" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="106" />
+      <NewLine UId="107" />
+      <Blank Num="11" UId="108" />
+      <Parameter Name="STATUS" UId="109">
+        <Blank UId="110" />
+        <Token Text="=&gt;" UId="111" />
+        <Blank UId="112" />
+        <Access Scope="LocalVariable" UId="113">
+          <Symbol UId="114">
+            <Component Name="status" UId="115" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="116" />
+      <NewLine UId="117" />
+      <Blank Num="11" UId="118" />
+      <Parameter Name="ID" UId="119">
+        <Blank UId="120" />
+        <Token Text="=&gt;" UId="121" />
+        <Blank UId="122" />
+        <Access Scope="LocalVariable" UId="123">
+          <Symbol UId="124">
+            <Component Name="id" UId="125" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="126" />
+      <NewLine UId="127" />
+      <Blank Num="11" UId="128" />
+      <Parameter Name="LEN" UId="129">
+        <Blank UId="130" />
+        <Token Text="=&gt;" UId="131" />
+        <Blank UId="132" />
+        <Access Scope="LocalVariable" UId="133">
+          <Symbol UId="134">
+            <Component Name="len" UId="135" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="136" />
+      <NewLine UId="137" />
+      <Blank Num="11" UId="138" />
+      <Parameter Name="TINFO" UId="139">
+        <Blank UId="140" />
+        <Token Text=":=" UId="141" />
+        <Blank UId="142" />
+        <Access Scope="LocalVariable" UId="143">
+          <Symbol UId="144">
+            <Component Name="statTinfo" UId="145" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="146" />
+      <NewLine UId="147" />
+      <Blank Num="11" UId="148" />
+      <Parameter Name="AINFO" UId="149">
+        <Blank UId="150" />
+        <Token Text=":=" UId="151" />
+        <Blank UId="152" />
+        <Access Scope="LocalVariable" UId="153">
+          <Symbol UId="154">
+            <Component Name="statAinfo" UId="155" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text=")" UId="156" />
+    </Instruction>
+  </Access>
+  <Token Text=";" UId="157" />
+  <NewLine Num="2" UId="158" />
+  <Token Text="IF" UId="159" />
+  <Blank UId="160" />
+  <Token Text="(" UId="161" />
+  <Access Scope="LocalVariable" UId="162">
+    <Symbol UId="163">
+      <Component Name="id" UId="164" />
+    </Symbol>
+  </Access>
+  <Blank UId="165" />
+  <Token Text="=" UId="166" />
+  <Blank UId="167" />
+  <Access Scope="LocalVariable" UId="168">
+    <Symbol UId="169">
+      <Component Name="fId" UId="170" />
+    </Symbol>
+  </Access>
+  <Token Text=")" UId="171" />
+  <Blank UId="172" />
+  <LineComment UId="173">
+    <Text UId="174"> some infos will be read every call of OB82</Text>
+  </LineComment>
+  <NewLine UId="175" />
+  <Blank Num="2" UId="176" />
+  <Token Text="AND" UId="177" />
+  <Blank UId="178" />
+  <Token Text="(" UId="179" />
+  <Access Scope="LocalVariable" UId="180">
+    <Symbol UId="181">
+      <Component Name="statAinfo" UId="182" />
+      <Token Text="." UId="183" />
+      <Component Name="addInfo" UId="184" />
+      <Token Text="." UId="185" />
+      <Component Name="formatIdentifier" UId="186" />
+    </Symbol>
+  </Access>
+  <Blank UId="187" />
+  <Token Text="=" UId="188" />
+  <Blank UId="189" />
+  <Access Scope="TypedConstant" UId="190">
+    <Constant UId="191">
+      <ConstantValue UId="192">W#16#8000</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="193" />
+  <Blank UId="194" />
+  <Token Text="THEN" UId="195" />
+  <Blank UId="196" />
+  <LineComment UId="197">
+    <Text UId="198"> W#16#8000: Channel diagnostics </Text>
+  </LineComment>
+  <NewLine UId="199" />
+  <Blank Num="2" UId="200" />
+  <NewLine UId="201" />
+  <Blank Num="2" UId="202" />
+  <Access Scope="LocalVariable" UId="203">
+    <Symbol UId="204">
+      <Component Name="diag" UId="205" />
+      <Token Text="." UId="206" />
+      <Component Name="multiError" UId="207" />
+    </Symbol>
+  </Access>
+  <Blank UId="208" />
+  <Token Text=":=" UId="209" />
+  <Blank UId="210" />
+  <Access Scope="LocalVariable" UId="211">
+    <Symbol UId="212">
+      <Component Name="statTinfo" UId="213" />
+      <Token Text="." UId="214" />
+      <Component Name="MultiError" UId="215" />
+    </Symbol>
+  </Access>
+  <Token Text=";" UId="216" />
+  <Blank UId="217" />
+  <LineComment UId="218">
+    <Text UId="219"> =TRUE, if there is more than one error.</Text>
+  </LineComment>
+  <NewLine UId="220" />
+  <Blank Num="2" UId="221" />
+  <Access Scope="LocalVariable" UId="222">
+    <Symbol UId="223">
+      <Component Name="diag" UId="224" />
+      <Token Text="." UId="225" />
+      <Component Name="slotNumber" UId="226" />
+    </Symbol>
+  </Access>
+  <Blank UId="227" />
+  <Token Text=":=" UId="228" />
+  <Blank UId="229" />
+  <Access Scope="LocalVariable" UId="230">
+    <Symbol UId="231">
+      <Component Name="statAinfo" UId="232" />
+      <Token Text="." UId="233" />
+      <Component Name="header" UId="234" />
+      <Token Text="." UId="235" />
+      <Component Name="slotNumber" UId="236" />
+    </Symbol>
+  </Access>
+  <Token Text=";" UId="237" />
+  <Blank UId="238" />
+  <LineComment UId="239">
+    <Text UId="240"> Slot number of the component triggering the interrupt</Text>
+  </LineComment>
+  <NewLine UId="241" />
+  <Blank Num="2" UId="242" />
+  <Access Scope="LocalVariable" UId="243">
+    <Symbol UId="244">
+      <Component Name="diag" UId="245" />
+      <Token Text="." UId="246" />
+      <Component Name="submoduleSlotNumber" UId="247" />
+    </Symbol>
+  </Access>
+  <Blank UId="248" />
+  <Token Text=":=" UId="249" />
+  <Blank UId="250" />
+  <Access Scope="LocalVariable" UId="251">
+    <Symbol UId="252">
+      <Component Name="statAinfo" UId="253" />
+      <Token Text="." UId="254" />
+      <Component Name="header" UId="255" />
+      <Token Text="." UId="256" />
+      <Component Name="submoduleSlotNumber" UId="257" />
+    </Symbol>
+  </Access>
+  <Token Text=";" UId="258" />
+  <Blank UId="259" />
+  <LineComment UId="260">
+    <Text UId="261"> Submodule slot number of the component triggering the interrupt </Text>
+  </LineComment>
+  <NewLine UId="262" />
+  <Blank Num="2" UId="263" />
+  <Access Scope="LocalVariable" UId="264">
+    <Symbol UId="265">
+      <Component Name="tempReal" UId="266" />
+    </Symbol>
+  </Access>
+  <Blank UId="267" />
+  <Token Text=":=" UId="268" />
+  <Blank UId="269" />
+  <Access Scope="Call" UId="270">
+    <Instruction Name="UINT_TO_REAL" UId="271">
+      <Token Text="(" UId="272" />
+      <NamelessParameter UId="273">
+        <Access Scope="LocalVariable" UId="274">
+          <Symbol UId="275">
+            <Component Name="statAinfo" UId="276" />
+            <Token Text="." UId="277" />
+            <Component Name="header" UId="278" />
+            <Token Text="." UId="279" />
+            <Component Name="blockLength" UId="280" />
+          </Symbol>
+        </Access>
+        <Blank UId="281" />
+        <Token Text="-" UId="282" />
+        <Blank UId="283" />
+        <Access Scope="LiteralConstant" UId="284">
+          <Constant UId="285">
+            <ConstantValue UId="287">24</ConstantValue>
+          </Constant>
+        </Access>
+      </NamelessParameter>
+      <Token Text=")" UId="289" />
+    </Instruction>
+  </Access>
+  <Blank UId="290" />
+  <Token Text="/" UId="291" />
+  <Blank UId="292" />
+  <Access Scope="LiteralConstant" UId="293">
+    <Constant UId="294">
+      <ConstantValue UId="296">6</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="297" />
+  <Blank UId="298" />
+  <LineComment UId="299">
+    <Text UId="300"> calculate numbers of multiple-channelDiag</Text>
+  </LineComment>
+  <NewLine UId="301" />
+  <Blank Num="2" UId="302" />
+  <Access Scope="LocalVariable" UId="303">
+    <Symbol UId="304">
+      <Component Name="tempMax" UId="305" />
+    </Symbol>
+  </Access>
+  <Blank UId="306" />
+  <Token Text=":=" UId="307" />
+  <Blank UId="308" />
+  <Access Scope="Call" UId="309">
+    <Instruction Name="REAL_TO_SINT" UId="310">
+      <Token Text="(" UId="311" />
+      <NamelessParameter UId="312">
+        <Access Scope="LocalVariable" UId="313">
+          <Symbol UId="314">
+            <Component Name="tempReal" UId="315" />
+          </Symbol>
+        </Access>
+      </NamelessParameter>
+      <Token Text=")" UId="317" />
+    </Instruction>
+  </Access>
+  <Blank UId="318" />
+  <Token Text="-" UId="319" />
+  <Blank UId="320" />
+  <Access Scope="LiteralConstant" UId="321">
+    <Constant UId="322">
+      <ConstantValue UId="324">1</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="325" />
+  <Blank UId="326" />
+  <LineComment UId="327">
+    <Text UId="328"> calculate upper limit for FOR loop</Text>
+  </LineComment>
+  <NewLine UId="329" />
+  <Blank Num="2" UId="330" />
+  <NewLine UId="331" />
+  <Blank Num="2" UId="332" />
+  <Token Text="FOR" UId="333" />
+  <Blank UId="334" />
+  <Access Scope="LocalVariable" UId="335">
+    <Symbol UId="336">
+      <Component Name="tempInfo" UId="337" />
+    </Symbol>
+  </Access>
+  <Blank UId="338" />
+  <Token Text=":=" UId="339" />
+  <Blank UId="340" />
+  <Access Scope="LiteralConstant" UId="341">
+    <Constant UId="342">
+      <ConstantValue UId="344">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Blank UId="345" />
+  <Token Text="TO" UId="346" />
+  <Blank UId="347" />
+  <Access Scope="LocalVariable" UId="348">
+    <Symbol UId="349">
+      <Component Name="tempMax" UId="350" />
+    </Symbol>
+  </Access>
+  <Blank UId="351" />
+  <Token Text="DO" UId="352" />
+  <Blank UId="353" />
+  <LineComment UId="354">
+    <Text UId="355"> FOR loop for multiple-channelDiag</Text>
+  </LineComment>
+  <NewLine UId="356" />
+  <Blank Num="4" UId="357" />
+  <Access Scope="LocalVariable" UId="358">
+    <Symbol UId="359">
+      <Component Name="tempUsint" UId="360" />
+    </Symbol>
+  </Access>
+  <Blank UId="361" />
+  <Token Text=":=" UId="362" />
+  <Blank UId="363" />
+  <Access Scope="Call" UId="364">
+    <Instruction Name="SHL" UId="365">
+      <Token Text="(" UId="366" />
+      <Parameter Name="IN" UId="367">
+        <Blank UId="368" />
+        <Token Text=":=" UId="369" />
+        <Blank UId="370" />
+        <Access Scope="LocalVariable" UId="371">
+          <Symbol UId="372">
+            <Component Name="statAinfo" UId="373" />
+            <Token Text="." UId="374" />
+            <Component Name="addInfo" UId="375" />
+            <Token Text="." UId="376" />
+            <Component Name="diag" UId="377">
+              <Token Text="[" UId="378" />
+              <Access Scope="LocalVariable" UId="379">
+                <Symbol UId="380">
+                  <Component Name="tempInfo" UId="381" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="382" />
+            </Component>
+            <Token Text="." UId="383" />
+            <Component Name="channelErrorType" UId="384" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="385" />
+      <Blank UId="386" />
+      <Parameter Name="N" UId="387">
+        <Blank UId="388" />
+        <Token Text=":=" UId="389" />
+        <Blank UId="390" />
+        <Access Scope="LiteralConstant" UId="391">
+          <Constant UId="392">
+            <ConstantValue UId="394">3</ConstantValue>
+          </Constant>
+        </Access>
+      </Parameter>
+      <Token Text=")" UId="396" />
+    </Instruction>
+  </Access>
+  <Token Text=";" UId="397" />
+  <Blank UId="398" />
+  <LineComment UId="399">
+    <Text UId="400"> calculate Type of error</Text>
+  </LineComment>
+  <NewLine UId="401" />
+  <Blank Num="4" UId="402" />
+  <Access Scope="LocalVariable" UId="403">
+    <Symbol UId="404">
+      <Component Name="statErrorType" UId="405" />
+    </Symbol>
+  </Access>
+  <Blank UId="406" />
+  <Token Text=":=" UId="407" />
+  <Blank UId="408" />
+  <Access Scope="Call" UId="409">
+    <Instruction Name="SHR" UId="410">
+      <Token Text="(" UId="411" />
+      <Parameter Name="IN" UId="412">
+        <Blank UId="413" />
+        <Token Text=":=" UId="414" />
+        <Blank UId="415" />
+        <Access Scope="LocalVariable" UId="416">
+          <Symbol UId="417">
+            <Component Name="tempUsint" UId="418" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="419" />
+      <Blank UId="420" />
+      <Parameter Name="N" UId="421">
+        <Blank UId="422" />
+        <Token Text=":=" UId="423" />
+        <Blank UId="424" />
+        <Access Scope="LiteralConstant" UId="425">
+          <Constant UId="426">
+            <ConstantValue UId="428">6</ConstantValue>
+          </Constant>
+        </Access>
+      </Parameter>
+      <Token Text=")" UId="430" />
+    </Instruction>
+  </Access>
+  <Token Text=";" UId="431" />
+  <Blank UId="432" />
+  <LineComment UId="433">
+    <Text UId="434"> 1: Incoming error; 2: Outgoing error</Text>
+  </LineComment>
+  <NewLine UId="435" />
+  <Blank Num="4" UId="436" />
+  <NewLine UId="437" />
+  <Blank Num="4" UId="438" />
+  <Access Scope="LocalVariable" UId="439">
+    <Symbol UId="440">
+      <Component Name="statChannelType" UId="441" />
+    </Symbol>
+  </Access>
+  <Blank UId="442" />
+  <Token Text=":=" UId="443" />
+  <Blank UId="444" />
+  <Access Scope="Call" UId="445">
+    <Instruction Name="SHR" UId="446">
+      <Token Text="(" UId="447" />
+      <Parameter Name="IN" UId="448">
+        <Blank UId="449" />
+        <Token Text=":=" UId="450" />
+        <Blank UId="451" />
+        <Access Scope="LocalVariable" UId="452">
+          <Symbol UId="453">
+            <Component Name="statAinfo" UId="454" />
+            <Token Text="." UId="455" />
+            <Component Name="addInfo" UId="456" />
+            <Token Text="." UId="457" />
+            <Component Name="diag" UId="458">
+              <Token Text="[" UId="459" />
+              <Access Scope="LocalVariable" UId="460">
+                <Symbol UId="461">
+                  <Component Name="tempInfo" UId="462" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="463" />
+            </Component>
+            <Token Text="." UId="464" />
+            <Component Name="channelErrorType" UId="465" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="466" />
+      <Blank UId="467" />
+      <Parameter Name="N" UId="468">
+        <Blank UId="469" />
+        <Token Text=":=" UId="470" />
+        <Blank UId="471" />
+        <Access Scope="LiteralConstant" UId="472">
+          <Constant UId="473">
+            <ConstantValue UId="475">5</ConstantValue>
+          </Constant>
+        </Access>
+      </Parameter>
+      <Token Text=")" UId="477" />
+    </Instruction>
+  </Access>
+  <Token Text=";" UId="478" />
+  <Blank UId="479" />
+  <LineComment UId="480">
+    <Text UId="481"> calculate Type of channel</Text>
+  </LineComment>
+  <NewLine UId="482" />
+  <Blank Num="4" UId="483" />
+  <LineComment UId="484">
+    <Text UId="485"> 1: Input channel; 2: Output channel</Text>
+  </LineComment>
+  <NewLine UId="486" />
+  <Blank Num="4" UId="487" />
+  <LineComment UId="488">
+    <Text UId="489">=============================================================================</Text>
+  </LineComment>
+  <NewLine UId="490" />
+  <Blank Num="4" UId="491" />
+  <Token Text="IF" UId="492" />
+  <Blank UId="493" />
+  <Token Text="(" UId="494" />
+  <Access Scope="LocalVariable" UId="495">
+    <Symbol UId="496">
+      <Component Name="statErrorType" UId="497" />
+    </Symbol>
+  </Access>
+  <Blank UId="498" />
+  <Token Text="=" UId="499" />
+  <Blank UId="500" />
+  <Access Scope="LiteralConstant" UId="501">
+    <Constant UId="502">
+      <ConstantValue UId="504">1</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="505" />
+  <Blank UId="506" />
+  <Token Text="THEN" UId="507" />
+  <Blank UId="508" />
+  <LineComment UId="509">
+    <Text UId="510"> 1: Incoming error</Text>
+  </LineComment>
+  <NewLine UId="511" />
+  <Blank Num="6" UId="512" />
+  <LineComment UId="513">
+    <Text UId="514">-----------------------------------------------------------------------------      </Text>
+  </LineComment>
+  <NewLine UId="515" />
+  <Blank Num="6" UId="516" />
+  <Token Text="IF" UId="517" />
+  <Blank UId="518" />
+  <Token Text="(" UId="519" />
+  <Access Scope="LocalVariable" UId="520">
+    <Symbol UId="521">
+      <Component Name="statChannelType" UId="522" />
+    </Symbol>
+  </Access>
+  <Blank UId="523" />
+  <Token Text="=" UId="524" />
+  <Blank UId="525" />
+  <Access Scope="LiteralConstant" UId="526">
+    <Constant UId="527">
+      <ConstantValue UId="529">1</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="530" />
+  <Blank UId="531" />
+  <Token Text="THEN" UId="532" />
+  <Blank UId="533" />
+  <LineComment UId="534">
+    <Text UId="535"> 1: Input channel</Text>
+  </LineComment>
+  <NewLine UId="536" />
+  <Blank Num="8" UId="537" />
+  <NewLine UId="538" />
+  <Blank Num="8" UId="539" />
+  <Token Text="IF" UId="540" />
+  <Blank UId="541" />
+  <Access Scope="LocalVariable" UId="542">
+    <Symbol UId="543">
+      <Component Name="statAinfo" UId="544" />
+      <Token Text="." UId="545" />
+      <Component Name="addInfo" UId="546" />
+      <Token Text="." UId="547" />
+      <Component Name="diag" UId="548">
+        <Token Text="[" UId="549" />
+        <Access Scope="LocalVariable" UId="550">
+          <Symbol UId="551">
+            <Component Name="tempInfo" UId="552" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="553" />
+      </Component>
+      <Token Text="." UId="554" />
+      <Component Name="channelNumber" UId="555" />
+    </Symbol>
+  </Access>
+  <Blank UId="556" />
+  <Token Text="=" UId="557" />
+  <Blank UId="558" />
+  <Access Scope="LiteralConstant" UId="559">
+    <Constant UId="560">
+      <ConstantValue UId="562">-32768</ConstantValue>
+    </Constant>
+  </Access>
+  <Blank UId="563" />
+  <Token Text="THEN" UId="564" />
+  <Blank UId="565" />
+  <LineComment UId="566">
+    <Text UId="567"> identify module with module diagnostics only</Text>
+  </LineComment>
+  <NewLine UId="568" />
+  <Blank Num="10" UId="569" />
+  <Access Scope="LocalVariable" UId="570">
+    <Symbol UId="571">
+      <Component Name="diag" UId="572" />
+      <Token Text="." UId="573" />
+      <Component Name="moduleDiagOnly" UId="574" />
+    </Symbol>
+  </Access>
+  <Blank UId="575" />
+  <Token Text=":=" UId="576" />
+  <Blank UId="577" />
+  <Access Scope="LiteralConstant" UId="578">
+    <Constant UId="579">
+      <ConstantValue UId="581">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="582" />
+  <NewLine UId="583" />
+  <Blank Num="10" UId="584" />
+  <Access Scope="Call" UId="585">
+    <CallInfo UId="586" BlockType="FC">
+      <Instance Scope="GlobalVariable" UId="588">
+        <Component Name="ModuleDiag" UId="587" />
+      </Instance>
+      <Token Text="(" UId="589" />
+      <Parameter Name="errorCode" UId="590">
+        <Blank UId="591" />
+        <Token Text=":=" UId="592" />
+        <Blank UId="593" />
+        <Access Scope="LocalVariable" UId="594">
+          <Symbol UId="595">
+            <Component Name="statAinfo" UId="596" />
+            <Token Text="." UId="597" />
+            <Component Name="addInfo" UId="598" />
+            <Token Text="." UId="599" />
+            <Component Name="diag" UId="600">
+              <Token Text="[" UId="601" />
+              <Access Scope="LocalVariable" UId="602">
+                <Symbol UId="603">
+                  <Component Name="tempInfo" UId="604" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="605" />
+            </Component>
+            <Token Text="." UId="606" />
+            <Component Name="errorCode" UId="607" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="608" />
+      <NewLine UId="609" />
+      <Blank Num="23" UId="610" />
+      <Parameter Name="value" UId="611">
+        <Blank UId="612" />
+        <Token Text=":=" UId="613" />
+        <Blank UId="614" />
+        <Access Scope="LiteralConstant" UId="615">
+          <Constant UId="616">
+            <ConstantValue UId="618">TRUE</ConstantValue>
+          </Constant>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="619" />
+      <NewLine UId="620" />
+      <Blank Num="23" UId="621" />
+      <Parameter Name="diag" UId="622">
+        <Blank UId="623" />
+        <Token Text=":=" UId="624" />
+        <Blank UId="625" />
+        <Access Scope="LocalVariable" UId="626">
+          <Symbol UId="627">
+            <Component Name="diag" UId="628" />
+            <Token Text="." UId="629" />
+            <Component Name="input" UId="630" />
+            <Token Text="." UId="631" />
+            <Component Name="module" UId="632" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="633" />
+      <NewLine UId="634" />
+      <Blank Num="23" UId="635" />
+      <Parameter Name="errorCounter" UId="636">
+        <Blank UId="637" />
+        <Token Text=":=" UId="638" />
+        <Blank UId="639" />
+        <Access Scope="LocalVariable" UId="640">
+          <Symbol UId="641">
+            <Component Name="diag" UId="642" />
+            <Token Text="." UId="643" />
+            <Component Name="errorCounter" UId="644" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text=")" UId="645" />
+    </CallInfo>
+  </Access>
+  <Token Text=";" UId="646" />
+  <NewLine UId="647" />
+  <Blank Num="8" UId="648" />
+  <Token Text="ELSE" UId="649" />
+  <NewLine UId="650" />
+  <Blank Num="10" UId="651" />
+  <Access Scope="LocalVariable" UId="652">
+    <Symbol UId="653">
+      <Component Name="diag" UId="654" />
+      <Token Text="." UId="655" />
+      <Component Name="moduleDiagOnly" UId="656" />
+    </Symbol>
+  </Access>
+  <Blank UId="657" />
+  <Token Text=":=" UId="658" />
+  <Blank UId="659" />
+  <Access Scope="LiteralConstant" UId="660">
+    <Constant UId="661">
+      <ConstantValue UId="663">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="664" />
+  <NewLine UId="665" />
+  <Blank Num="10" UId="666" />
+  <NewLine UId="667" />
+  <Blank Num="10" UId="668" />
+  <Token Text="IF" UId="669" />
+  <Blank UId="670" />
+  <Token Text="(" UId="671" />
+  <Token Text="(" UId="672" />
+  <Access Scope="LocalVariable" UId="673">
+    <Symbol UId="674">
+      <Component Name="statAinfo" UId="675" />
+      <Token Text="." UId="676" />
+      <Component Name="addInfo" UId="677" />
+      <Token Text="." UId="678" />
+      <Component Name="diag" UId="679">
+        <Token Text="[" UId="680" />
+        <Access Scope="LocalVariable" UId="681">
+          <Symbol UId="682">
+            <Component Name="tempInfo" UId="683" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="684" />
+      </Component>
+      <Token Text="." UId="685" />
+      <Component Name="channelNumber" UId="686" />
+    </Symbol>
+  </Access>
+  <Blank UId="687" />
+  <Token Text="&gt;=" UId="688" />
+  <Blank UId="689" />
+  <Access Scope="LiteralConstant" UId="690">
+    <Constant UId="691">
+      <ConstantValue UId="693">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="694" />
+  <Blank UId="695" />
+  <Token Text="AND" UId="696" />
+  <Blank UId="697" />
+  <LineComment UId="698">
+    <Text UId="699"> check array limits (lower limit)</Text>
+  </LineComment>
+  <NewLine UId="700" />
+  <Blank Num="12" UId="701" />
+  <Token Text="(" UId="702" />
+  <Access Scope="LocalVariable" UId="703">
+    <Symbol UId="704">
+      <Component Name="statAinfo" UId="705" />
+      <Token Text="." UId="706" />
+      <Component Name="addInfo" UId="707" />
+      <Token Text="." UId="708" />
+      <Component Name="diag" UId="709">
+        <Token Text="[" UId="710" />
+        <Access Scope="LocalVariable" UId="711">
+          <Symbol UId="712">
+            <Component Name="tempInfo" UId="713" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="714" />
+      </Component>
+      <Token Text="." UId="715" />
+      <Component Name="channelNumber" UId="716" />
+    </Symbol>
+  </Access>
+  <Blank UId="717" />
+  <Token Text="&lt;=" UId="718" />
+  <Blank UId="719" />
+  <Access Scope="LocalVariable" UId="720">
+    <Symbol UId="721">
+      <Component Name="diag" UId="722" />
+      <Token Text="." UId="723" />
+      <Component Name="input" UId="724" />
+      <Token Text="." UId="725" />
+      <Component Name="channel" UId="726" />
+      <Token Text="." UId="727" />
+      <Component Name="chMax" UId="728" />
+    </Symbol>
+  </Access>
+  <Token Text=")" UId="729" />
+  <Token Text=")" UId="730" />
+  <Blank UId="731" />
+  <Token Text="THEN" UId="732" />
+  <Blank UId="733" />
+  <LineComment UId="734">
+    <Text UId="735"> check array limits (upper limit)</Text>
+  </LineComment>
+  <NewLine UId="736" />
+  <Blank Num="12" UId="737" />
+  <Access Scope="LocalVariable" UId="738">
+    <Symbol UId="739">
+      <Component Name="diag" UId="740" />
+      <Token Text="." UId="741" />
+      <Component Name="input" UId="742" />
+      <Token Text="." UId="743" />
+      <Component Name="channel" UId="744" />
+      <Token Text="." UId="745" />
+      <Component Name="ch" UId="746">
+        <Token Text="[" UId="747" />
+        <Access Scope="LocalVariable" UId="748">
+          <Symbol UId="749">
+            <Component Name="statAinfo" UId="750" />
+            <Token Text="." UId="751" />
+            <Component Name="addInfo" UId="752" />
+            <Token Text="." UId="753" />
+            <Component Name="diag" UId="754">
+              <Token Text="[" UId="755" />
+              <Access Scope="LocalVariable" UId="756">
+                <Symbol UId="757">
+                  <Component Name="tempInfo" UId="758" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="759" />
+            </Component>
+            <Token Text="." UId="760" />
+            <Component Name="channelNumber" UId="761" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="762" />
+      </Component>
+      <Token Text="." UId="763" />
+      <Component Name="error" UId="764" />
+    </Symbol>
+  </Access>
+  <Blank UId="765" />
+  <Token Text=":=" UId="766" />
+  <Blank UId="767" />
+  <Access Scope="LiteralConstant" UId="768">
+    <Constant UId="769">
+      <ConstantValue UId="771">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="772" />
+  <Blank UId="773" />
+  <LineComment UId="774">
+    <Text UId="775"> Set error</Text>
+  </LineComment>
+  <NewLine UId="776" />
+  <Blank Num="12" UId="777" />
+  <Access Scope="LocalVariable" UId="778">
+    <Symbol UId="779">
+      <Component Name="diag" UId="780" />
+      <Token Text="." UId="781" />
+      <Component Name="input" UId="782" />
+      <Token Text="." UId="783" />
+      <Component Name="channel" UId="784" />
+      <Token Text="." UId="785" />
+      <Component Name="ch" UId="786">
+        <Token Text="[" UId="787" />
+        <Access Scope="LocalVariable" UId="788">
+          <Symbol UId="789">
+            <Component Name="statAinfo" UId="790" />
+            <Token Text="." UId="791" />
+            <Component Name="addInfo" UId="792" />
+            <Token Text="." UId="793" />
+            <Component Name="diag" UId="794">
+              <Token Text="[" UId="795" />
+              <Access Scope="LocalVariable" UId="796">
+                <Symbol UId="797">
+                  <Component Name="tempInfo" UId="798" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="799" />
+            </Component>
+            <Token Text="." UId="800" />
+            <Component Name="channelNumber" UId="801" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="802" />
+      </Component>
+      <Token Text="." UId="803" />
+      <Component Name="errorCode" UId="804" />
+    </Symbol>
+  </Access>
+  <Blank UId="805" />
+  <Token Text=":=" UId="806" />
+  <Blank UId="807" />
+  <Access Scope="LocalVariable" UId="808">
+    <Symbol UId="809">
+      <Component Name="statAinfo" UId="810" />
+      <Token Text="." UId="811" />
+      <Component Name="addInfo" UId="812" />
+      <Token Text="." UId="813" />
+      <Component Name="diag" UId="814">
+        <Token Text="[" UId="815" />
+        <Access Scope="LocalVariable" UId="816">
+          <Symbol UId="817">
+            <Component Name="tempInfo" UId="818" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="819" />
+      </Component>
+      <Token Text="." UId="820" />
+      <Component Name="errorCode" UId="821" />
+    </Symbol>
+  </Access>
+  <Token Text=";" UId="822" />
+  <Blank UId="823" />
+  <LineComment UId="824">
+    <Text UId="825"> copy error code</Text>
+  </LineComment>
+  <NewLine UId="826" />
+  <Blank Num="12" UId="827" />
+  <Access Scope="LocalVariable" UId="828">
+    <Symbol UId="829">
+      <Component Name="diag" UId="830" />
+      <Token Text="." UId="831" />
+      <Component Name="errorCounter" UId="832" />
+    </Symbol>
+  </Access>
+  <Blank UId="833" />
+  <Token Text=":=" UId="834" />
+  <Blank UId="835" />
+  <Access Scope="LocalVariable" UId="836">
+    <Symbol UId="837">
+      <Component Name="diag" UId="838" />
+      <Token Text="." UId="839" />
+      <Component Name="errorCounter" UId="840" />
+    </Symbol>
+  </Access>
+  <Blank UId="841" />
+  <Token Text="+" UId="842" />
+  <Blank UId="843" />
+  <Access Scope="LiteralConstant" UId="844">
+    <Constant UId="845">
+      <ConstantValue UId="847">1</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="848" />
+  <Blank UId="849" />
+  <LineComment UId="850">
+    <Text UId="851"> increment error counter</Text>
+  </LineComment>
+  <NewLine UId="852" />
+  <Blank Num="12" UId="853" />
+  <Access Scope="LocalVariable" UId="854">
+    <Symbol UId="855">
+      <Component Name="diag" UId="856" />
+      <Token Text="." UId="857" />
+      <Component Name="input" UId="858" />
+      <Token Text="." UId="859" />
+      <Component Name="channel" UId="860" />
+      <Token Text="." UId="861" />
+      <Component Name="areaLenError" UId="862" />
+    </Symbol>
+  </Access>
+  <Blank UId="863" />
+  <Token Text=":=" UId="864" />
+  <Blank UId="865" />
+  <Access Scope="LiteralConstant" UId="866">
+    <Constant UId="867">
+      <ConstantValue UId="869">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="870" />
+  <Blank UId="871" />
+  <LineComment UId="872">
+    <Text UId="873"> Reset area length error</Text>
+  </LineComment>
+  <NewLine UId="874" />
+  <Blank Num="10" UId="875" />
+  <Token Text="ELSE" UId="876" />
+  <NewLine UId="877" />
+  <Blank Num="12" UId="878" />
+  <Access Scope="LocalVariable" UId="879">
+    <Symbol UId="880">
+      <Component Name="diag" UId="881" />
+      <Token Text="." UId="882" />
+      <Component Name="input" UId="883" />
+      <Token Text="." UId="884" />
+      <Component Name="channel" UId="885" />
+      <Token Text="." UId="886" />
+      <Component Name="areaLenError" UId="887" />
+    </Symbol>
+  </Access>
+  <Blank UId="888" />
+  <Token Text=":=" UId="889" />
+  <Blank UId="890" />
+  <Access Scope="LiteralConstant" UId="891">
+    <Constant UId="892">
+      <ConstantValue UId="894">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="895" />
+  <Blank UId="896" />
+  <LineComment UId="897">
+    <Text UId="898"> Set area length error</Text>
+  </LineComment>
+  <NewLine UId="899" />
+  <Blank Num="10" UId="900" />
+  <Token Text="END_IF" UId="901" />
+  <Token Text=";" UId="902" />
+  <NewLine UId="903" />
+  <Blank Num="8" UId="904" />
+  <Token Text="END_IF" UId="905" />
+  <Token Text=";" UId="906" />
+  <NewLine UId="907" />
+  <Blank Num="8" UId="908" />
+  <LineComment UId="909">
+    <Text UId="910">-----------------------------------------------------------------------------   </Text>
+  </LineComment>
+  <NewLine UId="911" />
+  <Blank Num="6" UId="912" />
+  <Token Text="ELSIF" UId="913" />
+  <Blank UId="914" />
+  <Token Text="(" UId="915" />
+  <Access Scope="LocalVariable" UId="916">
+    <Symbol UId="917">
+      <Component Name="statChannelType" UId="918" />
+    </Symbol>
+  </Access>
+  <Blank UId="919" />
+  <Token Text="=" UId="920" />
+  <Blank UId="921" />
+  <Access Scope="LiteralConstant" UId="922">
+    <Constant UId="923">
+      <ConstantValue UId="925">2</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="926" />
+  <Blank UId="927" />
+  <Token Text="THEN" UId="928" />
+  <Blank UId="929" />
+  <LineComment UId="930">
+    <Text UId="931"> 2: Output channel</Text>
+  </LineComment>
+  <NewLine UId="932" />
+  <Blank Num="8" UId="933" />
+  <NewLine UId="934" />
+  <Blank Num="8" UId="935" />
+  <Token Text="IF" UId="936" />
+  <Blank UId="937" />
+  <Access Scope="LocalVariable" UId="938">
+    <Symbol UId="939">
+      <Component Name="statAinfo" UId="940" />
+      <Token Text="." UId="941" />
+      <Component Name="addInfo" UId="942" />
+      <Token Text="." UId="943" />
+      <Component Name="diag" UId="944">
+        <Token Text="[" UId="945" />
+        <Access Scope="LocalVariable" UId="946">
+          <Symbol UId="947">
+            <Component Name="tempInfo" UId="948" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="949" />
+      </Component>
+      <Token Text="." UId="950" />
+      <Component Name="channelNumber" UId="951" />
+    </Symbol>
+  </Access>
+  <Blank UId="952" />
+  <Token Text="=" UId="953" />
+  <Blank UId="954" />
+  <Access Scope="LiteralConstant" UId="955">
+    <Constant UId="956">
+      <ConstantValue UId="958">-32768</ConstantValue>
+    </Constant>
+  </Access>
+  <Blank UId="959" />
+  <Token Text="THEN" UId="960" />
+  <Blank UId="961" />
+  <LineComment UId="962">
+    <Text UId="963"> identify module with module diagnostics only</Text>
+  </LineComment>
+  <NewLine UId="964" />
+  <Blank Num="10" UId="965" />
+  <Access Scope="LocalVariable" UId="966">
+    <Symbol UId="967">
+      <Component Name="diag" UId="968" />
+      <Token Text="." UId="969" />
+      <Component Name="moduleDiagOnly" UId="970" />
+    </Symbol>
+  </Access>
+  <Blank UId="971" />
+  <Token Text=":=" UId="972" />
+  <Blank UId="973" />
+  <Access Scope="LiteralConstant" UId="974">
+    <Constant UId="975">
+      <ConstantValue UId="977">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="978" />
+  <NewLine UId="979" />
+  <Blank Num="10" UId="980" />
+  <Access Scope="Call" UId="981">
+    <CallInfo UId="982" BlockType="FC">
+      <Instance Scope="GlobalVariable" UId="984">
+        <Component Name="ModuleDiag" UId="983" />
+      </Instance>
+      <Token Text="(" UId="985" />
+      <Parameter Name="errorCode" UId="986">
+        <Blank UId="987" />
+        <Token Text=":=" UId="988" />
+        <Blank UId="989" />
+        <Access Scope="LocalVariable" UId="990">
+          <Symbol UId="991">
+            <Component Name="statAinfo" UId="992" />
+            <Token Text="." UId="993" />
+            <Component Name="addInfo" UId="994" />
+            <Token Text="." UId="995" />
+            <Component Name="diag" UId="996">
+              <Token Text="[" UId="997" />
+              <Access Scope="LocalVariable" UId="998">
+                <Symbol UId="999">
+                  <Component Name="tempInfo" UId="1000" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="1001" />
+            </Component>
+            <Token Text="." UId="1002" />
+            <Component Name="errorCode" UId="1003" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="1004" />
+      <NewLine UId="1005" />
+      <Blank Num="23" UId="1006" />
+      <Parameter Name="value" UId="1007">
+        <Blank UId="1008" />
+        <Token Text=":=" UId="1009" />
+        <Blank UId="1010" />
+        <Access Scope="LiteralConstant" UId="1011">
+          <Constant UId="1012">
+            <ConstantValue UId="1014">TRUE</ConstantValue>
+          </Constant>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="1015" />
+      <NewLine UId="1016" />
+      <Blank Num="23" UId="1017" />
+      <Parameter Name="diag" UId="1018">
+        <Blank UId="1019" />
+        <Token Text=":=" UId="1020" />
+        <Blank UId="1021" />
+        <Access Scope="LocalVariable" UId="1022">
+          <Symbol UId="1023">
+            <Component Name="diag" UId="1024" />
+            <Token Text="." UId="1025" />
+            <Component Name="output" UId="1026" />
+            <Token Text="." UId="1027" />
+            <Component Name="module" UId="1028" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="1029" />
+      <NewLine UId="1030" />
+      <Blank Num="23" UId="1031" />
+      <Parameter Name="errorCounter" UId="1032">
+        <Blank UId="1033" />
+        <Token Text=":=" UId="1034" />
+        <Blank UId="1035" />
+        <Access Scope="LocalVariable" UId="1036">
+          <Symbol UId="1037">
+            <Component Name="diag" UId="1038" />
+            <Token Text="." UId="1039" />
+            <Component Name="errorCounter" UId="1040" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text=")" UId="1041" />
+    </CallInfo>
+  </Access>
+  <Token Text=";" UId="1042" />
+  <NewLine UId="1043" />
+  <Blank Num="8" UId="1044" />
+  <Token Text="ELSE" UId="1045" />
+  <NewLine UId="1046" />
+  <Blank Num="10" UId="1047" />
+  <Access Scope="LocalVariable" UId="1048">
+    <Symbol UId="1049">
+      <Component Name="diag" UId="1050" />
+      <Token Text="." UId="1051" />
+      <Component Name="moduleDiagOnly" UId="1052" />
+    </Symbol>
+  </Access>
+  <Blank UId="1053" />
+  <Token Text=":=" UId="1054" />
+  <Blank UId="1055" />
+  <Access Scope="LiteralConstant" UId="1056">
+    <Constant UId="1057">
+      <ConstantValue UId="1059">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="1060" />
+  <NewLine UId="1061" />
+  <Blank Num="10" UId="1062" />
+  <NewLine UId="1063" />
+  <Blank Num="10" UId="1064" />
+  <Token Text="IF" UId="1065" />
+  <Blank UId="1066" />
+  <Token Text="(" UId="1067" />
+  <Token Text="(" UId="1068" />
+  <Access Scope="LocalVariable" UId="1069">
+    <Symbol UId="1070">
+      <Component Name="statAinfo" UId="1071" />
+      <Token Text="." UId="1072" />
+      <Component Name="addInfo" UId="1073" />
+      <Token Text="." UId="1074" />
+      <Component Name="diag" UId="1075">
+        <Token Text="[" UId="1076" />
+        <Access Scope="LocalVariable" UId="1077">
+          <Symbol UId="1078">
+            <Component Name="tempInfo" UId="1079" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1080" />
+      </Component>
+      <Token Text="." UId="1081" />
+      <Component Name="channelNumber" UId="1082" />
+    </Symbol>
+  </Access>
+  <Blank UId="1083" />
+  <Token Text="&gt;=" UId="1084" />
+  <Blank UId="1085" />
+  <Access Scope="LiteralConstant" UId="1086">
+    <Constant UId="1087">
+      <ConstantValue UId="1089">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="1090" />
+  <Blank UId="1091" />
+  <Token Text="AND" UId="1092" />
+  <Blank UId="1093" />
+  <LineComment UId="1094">
+    <Text UId="1095"> check array limits (lower limit)</Text>
+  </LineComment>
+  <NewLine UId="1096" />
+  <Blank Num="12" UId="1097" />
+  <Token Text="(" UId="1098" />
+  <Access Scope="LocalVariable" UId="1099">
+    <Symbol UId="1100">
+      <Component Name="statAinfo" UId="1101" />
+      <Token Text="." UId="1102" />
+      <Component Name="addInfo" UId="1103" />
+      <Token Text="." UId="1104" />
+      <Component Name="diag" UId="1105">
+        <Token Text="[" UId="1106" />
+        <Access Scope="LocalVariable" UId="1107">
+          <Symbol UId="1108">
+            <Component Name="tempInfo" UId="1109" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1110" />
+      </Component>
+      <Token Text="." UId="1111" />
+      <Component Name="channelNumber" UId="1112" />
+    </Symbol>
+  </Access>
+  <Blank UId="1113" />
+  <Token Text="&lt;=" UId="1114" />
+  <Blank UId="1115" />
+  <Access Scope="LocalVariable" UId="1116">
+    <Symbol UId="1117">
+      <Component Name="diag" UId="1118" />
+      <Token Text="." UId="1119" />
+      <Component Name="output" UId="1120" />
+      <Token Text="." UId="1121" />
+      <Component Name="channel" UId="1122" />
+      <Token Text="." UId="1123" />
+      <Component Name="chMax" UId="1124" />
+    </Symbol>
+  </Access>
+  <Token Text=")" UId="1125" />
+  <Token Text=")" UId="1126" />
+  <Blank UId="1127" />
+  <Token Text="THEN" UId="1128" />
+  <Blank UId="1129" />
+  <LineComment UId="1130">
+    <Text UId="1131"> check array limits (upper limit)</Text>
+  </LineComment>
+  <NewLine UId="1132" />
+  <Blank Num="12" UId="1133" />
+  <Access Scope="LocalVariable" UId="1134">
+    <Symbol UId="1135">
+      <Component Name="diag" UId="1136" />
+      <Token Text="." UId="1137" />
+      <Component Name="output" UId="1138" />
+      <Token Text="." UId="1139" />
+      <Component Name="channel" UId="1140" />
+      <Token Text="." UId="1141" />
+      <Component Name="ch" UId="1142">
+        <Token Text="[" UId="1143" />
+        <Access Scope="LocalVariable" UId="1144">
+          <Symbol UId="1145">
+            <Component Name="statAinfo" UId="1146" />
+            <Token Text="." UId="1147" />
+            <Component Name="addInfo" UId="1148" />
+            <Token Text="." UId="1149" />
+            <Component Name="diag" UId="1150">
+              <Token Text="[" UId="1151" />
+              <Access Scope="LocalVariable" UId="1152">
+                <Symbol UId="1153">
+                  <Component Name="tempInfo" UId="1154" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="1155" />
+            </Component>
+            <Token Text="." UId="1156" />
+            <Component Name="channelNumber" UId="1157" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1158" />
+      </Component>
+      <Token Text="." UId="1159" />
+      <Component Name="error" UId="1160" />
+    </Symbol>
+  </Access>
+  <Blank UId="1161" />
+  <Token Text=":=" UId="1162" />
+  <Blank UId="1163" />
+  <Access Scope="LiteralConstant" UId="1164">
+    <Constant UId="1165">
+      <ConstantValue UId="1167">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="1168" />
+  <Blank UId="1169" />
+  <LineComment UId="1170">
+    <Text UId="1171"> Set error</Text>
+  </LineComment>
+  <NewLine UId="1172" />
+  <Blank Num="12" UId="1173" />
+  <Access Scope="LocalVariable" UId="1174">
+    <Symbol UId="1175">
+      <Component Name="diag" UId="1176" />
+      <Token Text="." UId="1177" />
+      <Component Name="output" UId="1178" />
+      <Token Text="." UId="1179" />
+      <Component Name="channel" UId="1180" />
+      <Token Text="." UId="1181" />
+      <Component Name="ch" UId="1182">
+        <Token Text="[" UId="1183" />
+        <Access Scope="LocalVariable" UId="1184">
+          <Symbol UId="1185">
+            <Component Name="statAinfo" UId="1186" />
+            <Token Text="." UId="1187" />
+            <Component Name="addInfo" UId="1188" />
+            <Token Text="." UId="1189" />
+            <Component Name="diag" UId="1190">
+              <Token Text="[" UId="1191" />
+              <Access Scope="LocalVariable" UId="1192">
+                <Symbol UId="1193">
+                  <Component Name="tempInfo" UId="1194" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="1195" />
+            </Component>
+            <Token Text="." UId="1196" />
+            <Component Name="channelNumber" UId="1197" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1198" />
+      </Component>
+      <Token Text="." UId="1199" />
+      <Component Name="errorCode" UId="1200" />
+    </Symbol>
+  </Access>
+  <Blank UId="1201" />
+  <Token Text=":=" UId="1202" />
+  <Blank UId="1203" />
+  <Access Scope="LocalVariable" UId="1204">
+    <Symbol UId="1205">
+      <Component Name="statAinfo" UId="1206" />
+      <Token Text="." UId="1207" />
+      <Component Name="addInfo" UId="1208" />
+      <Token Text="." UId="1209" />
+      <Component Name="diag" UId="1210">
+        <Token Text="[" UId="1211" />
+        <Access Scope="LocalVariable" UId="1212">
+          <Symbol UId="1213">
+            <Component Name="tempInfo" UId="1214" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1215" />
+      </Component>
+      <Token Text="." UId="1216" />
+      <Component Name="errorCode" UId="1217" />
+    </Symbol>
+  </Access>
+  <Token Text=";" UId="1218" />
+  <Blank UId="1219" />
+  <LineComment UId="1220">
+    <Text UId="1221"> copy error code</Text>
+  </LineComment>
+  <NewLine UId="1222" />
+  <Blank Num="12" UId="1223" />
+  <Access Scope="LocalVariable" UId="1224">
+    <Symbol UId="1225">
+      <Component Name="diag" UId="1226" />
+      <Token Text="." UId="1227" />
+      <Component Name="errorCounter" UId="1228" />
+    </Symbol>
+  </Access>
+  <Blank UId="1229" />
+  <Token Text=":=" UId="1230" />
+  <Blank UId="1231" />
+  <Access Scope="LocalVariable" UId="1232">
+    <Symbol UId="1233">
+      <Component Name="diag" UId="1234" />
+      <Token Text="." UId="1235" />
+      <Component Name="errorCounter" UId="1236" />
+    </Symbol>
+  </Access>
+  <Blank UId="1237" />
+  <Token Text="+" UId="1238" />
+  <Blank UId="1239" />
+  <Access Scope="LiteralConstant" UId="1240">
+    <Constant UId="1241">
+      <ConstantValue UId="1243">1</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="1244" />
+  <Blank UId="1245" />
+  <LineComment UId="1246">
+    <Text UId="1247"> increment error counter</Text>
+  </LineComment>
+  <NewLine UId="1248" />
+  <Blank Num="12" UId="1249" />
+  <Access Scope="LocalVariable" UId="1250">
+    <Symbol UId="1251">
+      <Component Name="diag" UId="1252" />
+      <Token Text="." UId="1253" />
+      <Component Name="output" UId="1254" />
+      <Token Text="." UId="1255" />
+      <Component Name="channel" UId="1256" />
+      <Token Text="." UId="1257" />
+      <Component Name="areaLenError" UId="1258" />
+    </Symbol>
+  </Access>
+  <Blank UId="1259" />
+  <Token Text=":=" UId="1260" />
+  <Blank UId="1261" />
+  <Access Scope="LiteralConstant" UId="1262">
+    <Constant UId="1263">
+      <ConstantValue UId="1265">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="1266" />
+  <Blank UId="1267" />
+  <LineComment UId="1268">
+    <Text UId="1269"> Reset area length error</Text>
+  </LineComment>
+  <NewLine UId="1270" />
+  <Blank Num="10" UId="1271" />
+  <Token Text="ELSE" UId="1272" />
+  <NewLine UId="1273" />
+  <Blank Num="12" UId="1274" />
+  <Access Scope="LocalVariable" UId="1275">
+    <Symbol UId="1276">
+      <Component Name="diag" UId="1277" />
+      <Token Text="." UId="1278" />
+      <Component Name="output" UId="1279" />
+      <Token Text="." UId="1280" />
+      <Component Name="channel" UId="1281" />
+      <Token Text="." UId="1282" />
+      <Component Name="areaLenError" UId="1283" />
+    </Symbol>
+  </Access>
+  <Blank UId="1284" />
+  <Token Text=":=" UId="1285" />
+  <Blank UId="1286" />
+  <Access Scope="LiteralConstant" UId="1287">
+    <Constant UId="1288">
+      <ConstantValue UId="1290">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="1291" />
+  <Blank UId="1292" />
+  <LineComment UId="1293">
+    <Text UId="1294"> Set area length error</Text>
+  </LineComment>
+  <NewLine UId="1295" />
+  <Blank Num="10" UId="1296" />
+  <Token Text="END_IF" UId="1297" />
+  <Token Text=";" UId="1298" />
+  <NewLine UId="1299" />
+  <Blank Num="8" UId="1300" />
+  <Token Text="END_IF" UId="1301" />
+  <Token Text=";" UId="1302" />
+  <NewLine UId="1303" />
+  <Blank Num="8" UId="1304" />
+  <LineComment UId="1305">
+    <Text UId="1306">-----------------------------------------------------------------------------  </Text>
+  </LineComment>
+  <NewLine UId="1307" />
+  <Blank Num="6" UId="1308" />
+  <Token Text="ELSIF" UId="1309" />
+  <Blank UId="1310" />
+  <Token Text="(" UId="1311" />
+  <Access Scope="LocalVariable" UId="1312">
+    <Symbol UId="1313">
+      <Component Name="statChannelType" UId="1314" />
+    </Symbol>
+  </Access>
+  <Blank UId="1315" />
+  <Token Text="=" UId="1316" />
+  <Blank UId="1317" />
+  <Access Scope="LiteralConstant" UId="1318">
+    <Constant UId="1319">
+      <ConstantValue UId="1321">3</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="1322" />
+  <Blank UId="1323" />
+  <Token Text="THEN" UId="1324" />
+  <Blank UId="1325" />
+  <LineComment UId="1326">
+    <Text UId="1327"> 3: Input/output channel</Text>
+  </LineComment>
+  <NewLine UId="1328" />
+  <Blank Num="8" UId="1329" />
+  <NewLine UId="1330" />
+  <Blank Num="8" UId="1331" />
+  <Token Text="IF" UId="1332" />
+  <Blank UId="1333" />
+  <Access Scope="LocalVariable" UId="1334">
+    <Symbol UId="1335">
+      <Component Name="statAinfo" UId="1336" />
+      <Token Text="." UId="1337" />
+      <Component Name="addInfo" UId="1338" />
+      <Token Text="." UId="1339" />
+      <Component Name="diag" UId="1340">
+        <Token Text="[" UId="1341" />
+        <Access Scope="LocalVariable" UId="1342">
+          <Symbol UId="1343">
+            <Component Name="tempInfo" UId="1344" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1345" />
+      </Component>
+      <Token Text="." UId="1346" />
+      <Component Name="channelNumber" UId="1347" />
+    </Symbol>
+  </Access>
+  <Blank UId="1348" />
+  <Token Text="=" UId="1349" />
+  <Blank UId="1350" />
+  <Access Scope="LiteralConstant" UId="1351">
+    <Constant UId="1352">
+      <ConstantValue UId="1354">-32768</ConstantValue>
+    </Constant>
+  </Access>
+  <Blank UId="1355" />
+  <Token Text="THEN" UId="1356" />
+  <Blank UId="1357" />
+  <LineComment UId="1358">
+    <Text UId="1359"> identify module with module diagnostics only</Text>
+  </LineComment>
+  <NewLine UId="1360" />
+  <Blank Num="10" UId="1361" />
+  <Access Scope="LocalVariable" UId="1362">
+    <Symbol UId="1363">
+      <Component Name="diag" UId="1364" />
+      <Token Text="." UId="1365" />
+      <Component Name="moduleDiagOnly" UId="1366" />
+    </Symbol>
+  </Access>
+  <Blank UId="1367" />
+  <Token Text=":=" UId="1368" />
+  <Blank UId="1369" />
+  <Access Scope="LiteralConstant" UId="1370">
+    <Constant UId="1371">
+      <ConstantValue UId="1373">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="1374" />
+  <NewLine UId="1375" />
+  <Blank Num="10" UId="1376" />
+  <Access Scope="Call" UId="1377">
+    <CallInfo UId="1378" BlockType="FC">
+      <Instance Scope="GlobalVariable" UId="1380">
+        <Component Name="ModuleDiag" UId="1379" />
+      </Instance>
+      <Token Text="(" UId="1381" />
+      <Parameter Name="errorCode" UId="1382">
+        <Blank UId="1383" />
+        <Token Text=":=" UId="1384" />
+        <Blank UId="1385" />
+        <Access Scope="LocalVariable" UId="1386">
+          <Symbol UId="1387">
+            <Component Name="statAinfo" UId="1388" />
+            <Token Text="." UId="1389" />
+            <Component Name="addInfo" UId="1390" />
+            <Token Text="." UId="1391" />
+            <Component Name="diag" UId="1392">
+              <Token Text="[" UId="1393" />
+              <Access Scope="LocalVariable" UId="1394">
+                <Symbol UId="1395">
+                  <Component Name="tempInfo" UId="1396" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="1397" />
+            </Component>
+            <Token Text="." UId="1398" />
+            <Component Name="errorCode" UId="1399" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="1400" />
+      <NewLine UId="1401" />
+      <Blank Num="23" UId="1402" />
+      <Parameter Name="value" UId="1403">
+        <Blank UId="1404" />
+        <Token Text=":=" UId="1405" />
+        <Blank UId="1406" />
+        <Access Scope="LiteralConstant" UId="1407">
+          <Constant UId="1408">
+            <ConstantValue UId="1410">TRUE</ConstantValue>
+          </Constant>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="1411" />
+      <NewLine UId="1412" />
+      <Blank Num="23" UId="1413" />
+      <Parameter Name="diag" UId="1414">
+        <Blank UId="1415" />
+        <Token Text=":=" UId="1416" />
+        <Blank UId="1417" />
+        <Access Scope="LocalVariable" UId="1418">
+          <Symbol UId="1419">
+            <Component Name="diag" UId="1420" />
+            <Token Text="." UId="1421" />
+            <Component Name="inOut" UId="1422" />
+            <Token Text="." UId="1423" />
+            <Component Name="module" UId="1424" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="1425" />
+      <NewLine UId="1426" />
+      <Blank Num="23" UId="1427" />
+      <Parameter Name="errorCounter" UId="1428">
+        <Blank UId="1429" />
+        <Token Text=":=" UId="1430" />
+        <Blank UId="1431" />
+        <Access Scope="LocalVariable" UId="1432">
+          <Symbol UId="1433">
+            <Component Name="diag" UId="1434" />
+            <Token Text="." UId="1435" />
+            <Component Name="errorCounter" UId="1436" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text=")" UId="1437" />
+    </CallInfo>
+  </Access>
+  <Token Text=";" UId="1438" />
+  <NewLine UId="1439" />
+  <Blank Num="8" UId="1440" />
+  <Token Text="ELSE" UId="1441" />
+  <NewLine UId="1442" />
+  <Blank Num="10" UId="1443" />
+  <Access Scope="LocalVariable" UId="1444">
+    <Symbol UId="1445">
+      <Component Name="diag" UId="1446" />
+      <Token Text="." UId="1447" />
+      <Component Name="moduleDiagOnly" UId="1448" />
+    </Symbol>
+  </Access>
+  <Blank UId="1449" />
+  <Token Text=":=" UId="1450" />
+  <Blank UId="1451" />
+  <Access Scope="LiteralConstant" UId="1452">
+    <Constant UId="1453">
+      <ConstantValue UId="1455">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="1456" />
+  <NewLine UId="1457" />
+  <Blank Num="10" UId="1458" />
+  <NewLine UId="1459" />
+  <Blank Num="10" UId="1460" />
+  <Token Text="IF" UId="1461" />
+  <Blank UId="1462" />
+  <Token Text="(" UId="1463" />
+  <Token Text="(" UId="1464" />
+  <Access Scope="LocalVariable" UId="1465">
+    <Symbol UId="1466">
+      <Component Name="statAinfo" UId="1467" />
+      <Token Text="." UId="1468" />
+      <Component Name="addInfo" UId="1469" />
+      <Token Text="." UId="1470" />
+      <Component Name="diag" UId="1471">
+        <Token Text="[" UId="1472" />
+        <Access Scope="LocalVariable" UId="1473">
+          <Symbol UId="1474">
+            <Component Name="tempInfo" UId="1475" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1476" />
+      </Component>
+      <Token Text="." UId="1477" />
+      <Component Name="channelNumber" UId="1478" />
+    </Symbol>
+  </Access>
+  <Blank UId="1479" />
+  <Token Text="&gt;=" UId="1480" />
+  <Blank UId="1481" />
+  <Access Scope="LiteralConstant" UId="1482">
+    <Constant UId="1483">
+      <ConstantValue UId="1485">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="1486" />
+  <Blank UId="1487" />
+  <Token Text="AND" UId="1488" />
+  <Blank UId="1489" />
+  <LineComment UId="1490">
+    <Text UId="1491"> check array limits (lower limit)</Text>
+  </LineComment>
+  <NewLine UId="1492" />
+  <Blank Num="12" UId="1493" />
+  <Token Text="(" UId="1494" />
+  <Access Scope="LocalVariable" UId="1495">
+    <Symbol UId="1496">
+      <Component Name="statAinfo" UId="1497" />
+      <Token Text="." UId="1498" />
+      <Component Name="addInfo" UId="1499" />
+      <Token Text="." UId="1500" />
+      <Component Name="diag" UId="1501">
+        <Token Text="[" UId="1502" />
+        <Access Scope="LocalVariable" UId="1503">
+          <Symbol UId="1504">
+            <Component Name="tempInfo" UId="1505" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1506" />
+      </Component>
+      <Token Text="." UId="1507" />
+      <Component Name="channelNumber" UId="1508" />
+    </Symbol>
+  </Access>
+  <Blank UId="1509" />
+  <Token Text="&lt;=" UId="1510" />
+  <Blank UId="1511" />
+  <Access Scope="LocalVariable" UId="1512">
+    <Symbol UId="1513">
+      <Component Name="diag" UId="1514" />
+      <Token Text="." UId="1515" />
+      <Component Name="inOut" UId="1516" />
+      <Token Text="." UId="1517" />
+      <Component Name="channel" UId="1518" />
+      <Token Text="." UId="1519" />
+      <Component Name="chMax" UId="1520" />
+    </Symbol>
+  </Access>
+  <Token Text=")" UId="1521" />
+  <Token Text=")" UId="1522" />
+  <Blank UId="1523" />
+  <Token Text="THEN" UId="1524" />
+  <Blank UId="1525" />
+  <LineComment UId="1526">
+    <Text UId="1527"> check array limits (upper limit)</Text>
+  </LineComment>
+  <NewLine UId="1528" />
+  <Blank Num="12" UId="1529" />
+  <Access Scope="LocalVariable" UId="1530">
+    <Symbol UId="1531">
+      <Component Name="diag" UId="1532" />
+      <Token Text="." UId="1533" />
+      <Component Name="inOut" UId="1534" />
+      <Token Text="." UId="1535" />
+      <Component Name="channel" UId="1536" />
+      <Token Text="." UId="1537" />
+      <Component Name="ch" UId="1538">
+        <Token Text="[" UId="1539" />
+        <Access Scope="LocalVariable" UId="1540">
+          <Symbol UId="1541">
+            <Component Name="statAinfo" UId="1542" />
+            <Token Text="." UId="1543" />
+            <Component Name="addInfo" UId="1544" />
+            <Token Text="." UId="1545" />
+            <Component Name="diag" UId="1546">
+              <Token Text="[" UId="1547" />
+              <Access Scope="LocalVariable" UId="1548">
+                <Symbol UId="1549">
+                  <Component Name="tempInfo" UId="1550" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="1551" />
+            </Component>
+            <Token Text="." UId="1552" />
+            <Component Name="channelNumber" UId="1553" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1554" />
+      </Component>
+      <Token Text="." UId="1555" />
+      <Component Name="error" UId="1556" />
+    </Symbol>
+  </Access>
+  <Blank UId="1557" />
+  <Token Text=":=" UId="1558" />
+  <Blank UId="1559" />
+  <Access Scope="LiteralConstant" UId="1560">
+    <Constant UId="1561">
+      <ConstantValue UId="1563">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="1564" />
+  <Blank UId="1565" />
+  <LineComment UId="1566">
+    <Text UId="1567"> Set error</Text>
+  </LineComment>
+  <NewLine UId="1568" />
+  <Blank Num="12" UId="1569" />
+  <Access Scope="LocalVariable" UId="1570">
+    <Symbol UId="1571">
+      <Component Name="diag" UId="1572" />
+      <Token Text="." UId="1573" />
+      <Component Name="inOut" UId="1574" />
+      <Token Text="." UId="1575" />
+      <Component Name="channel" UId="1576" />
+      <Token Text="." UId="1577" />
+      <Component Name="ch" UId="1578">
+        <Token Text="[" UId="1579" />
+        <Access Scope="LocalVariable" UId="1580">
+          <Symbol UId="1581">
+            <Component Name="statAinfo" UId="1582" />
+            <Token Text="." UId="1583" />
+            <Component Name="addInfo" UId="1584" />
+            <Token Text="." UId="1585" />
+            <Component Name="diag" UId="1586">
+              <Token Text="[" UId="1587" />
+              <Access Scope="LocalVariable" UId="1588">
+                <Symbol UId="1589">
+                  <Component Name="tempInfo" UId="1590" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="1591" />
+            </Component>
+            <Token Text="." UId="1592" />
+            <Component Name="channelNumber" UId="1593" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1594" />
+      </Component>
+      <Token Text="." UId="1595" />
+      <Component Name="errorCode" UId="1596" />
+    </Symbol>
+  </Access>
+  <Blank UId="1597" />
+  <Token Text=":=" UId="1598" />
+  <Blank UId="1599" />
+  <Access Scope="LocalVariable" UId="1600">
+    <Symbol UId="1601">
+      <Component Name="statAinfo" UId="1602" />
+      <Token Text="." UId="1603" />
+      <Component Name="addInfo" UId="1604" />
+      <Token Text="." UId="1605" />
+      <Component Name="diag" UId="1606">
+        <Token Text="[" UId="1607" />
+        <Access Scope="LocalVariable" UId="1608">
+          <Symbol UId="1609">
+            <Component Name="tempInfo" UId="1610" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1611" />
+      </Component>
+      <Token Text="." UId="1612" />
+      <Component Name="errorCode" UId="1613" />
+    </Symbol>
+  </Access>
+  <Token Text=";" UId="1614" />
+  <Blank UId="1615" />
+  <LineComment UId="1616">
+    <Text UId="1617"> copy error code</Text>
+  </LineComment>
+  <NewLine UId="1618" />
+  <Blank Num="12" UId="1619" />
+  <Access Scope="LocalVariable" UId="1620">
+    <Symbol UId="1621">
+      <Component Name="diag" UId="1622" />
+      <Token Text="." UId="1623" />
+      <Component Name="errorCounter" UId="1624" />
+    </Symbol>
+  </Access>
+  <Blank UId="1625" />
+  <Token Text=":=" UId="1626" />
+  <Blank UId="1627" />
+  <Access Scope="LocalVariable" UId="1628">
+    <Symbol UId="1629">
+      <Component Name="diag" UId="1630" />
+      <Token Text="." UId="1631" />
+      <Component Name="errorCounter" UId="1632" />
+    </Symbol>
+  </Access>
+  <Blank UId="1633" />
+  <Token Text="+" UId="1634" />
+  <Blank UId="1635" />
+  <Access Scope="LiteralConstant" UId="1636">
+    <Constant UId="1637">
+      <ConstantValue UId="1639">1</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="1640" />
+  <Blank UId="1641" />
+  <LineComment UId="1642">
+    <Text UId="1643"> increment error counter</Text>
+  </LineComment>
+  <NewLine UId="1644" />
+  <Blank Num="12" UId="1645" />
+  <Access Scope="LocalVariable" UId="1646">
+    <Symbol UId="1647">
+      <Component Name="diag" UId="1648" />
+      <Token Text="." UId="1649" />
+      <Component Name="inOut" UId="1650" />
+      <Token Text="." UId="1651" />
+      <Component Name="channel" UId="1652" />
+      <Token Text="." UId="1653" />
+      <Component Name="areaLenError" UId="1654" />
+    </Symbol>
+  </Access>
+  <Blank UId="1655" />
+  <Token Text=":=" UId="1656" />
+  <Blank UId="1657" />
+  <Access Scope="LiteralConstant" UId="1658">
+    <Constant UId="1659">
+      <ConstantValue UId="1661">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="1662" />
+  <Blank UId="1663" />
+  <LineComment UId="1664">
+    <Text UId="1665"> Reset area length error</Text>
+  </LineComment>
+  <NewLine UId="1666" />
+  <Blank Num="10" UId="1667" />
+  <Token Text="ELSE" UId="1668" />
+  <NewLine UId="1669" />
+  <Blank Num="12" UId="1670" />
+  <Access Scope="LocalVariable" UId="1671">
+    <Symbol UId="1672">
+      <Component Name="diag" UId="1673" />
+      <Token Text="." UId="1674" />
+      <Component Name="inOut" UId="1675" />
+      <Token Text="." UId="1676" />
+      <Component Name="channel" UId="1677" />
+      <Token Text="." UId="1678" />
+      <Component Name="areaLenError" UId="1679" />
+    </Symbol>
+  </Access>
+  <Blank UId="1680" />
+  <Token Text=":=" UId="1681" />
+  <Blank UId="1682" />
+  <Access Scope="LiteralConstant" UId="1683">
+    <Constant UId="1684">
+      <ConstantValue UId="1686">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="1687" />
+  <Blank UId="1688" />
+  <LineComment UId="1689">
+    <Text UId="1690"> Set area length error</Text>
+  </LineComment>
+  <NewLine UId="1691" />
+  <Blank Num="10" UId="1692" />
+  <Token Text="END_IF" UId="1693" />
+  <Token Text=";" UId="1694" />
+  <NewLine UId="1695" />
+  <Blank Num="8" UId="1696" />
+  <Token Text="END_IF" UId="1697" />
+  <Token Text=";" UId="1698" />
+  <NewLine UId="1699" />
+  <Blank Num="6" UId="1700" />
+  <Token Text="END_IF" UId="1701" />
+  <Token Text=";" UId="1702" />
+  <NewLine UId="1703" />
+  <Blank Num="6" UId="1704" />
+  <LineComment UId="1705">
+    <Text UId="1706">=============================================================================  </Text>
+  </LineComment>
+  <NewLine UId="1707" />
+  <Blank Num="4" UId="1708" />
+  <Token Text="ELSIF" UId="1709" />
+  <Blank UId="1710" />
+  <Token Text="(" UId="1711" />
+  <Access Scope="LocalVariable" UId="1712">
+    <Symbol UId="1713">
+      <Component Name="statErrorType" UId="1714" />
+    </Symbol>
+  </Access>
+  <Blank UId="1715" />
+  <Token Text="&gt;=" UId="1716" />
+  <Blank UId="1717" />
+  <Access Scope="LiteralConstant" UId="1718">
+    <Constant UId="1719">
+      <ConstantValue UId="1721">2</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="1722" />
+  <Blank UId="1723" />
+  <Token Text="THEN" UId="1724" />
+  <Blank UId="1725" />
+  <LineComment UId="1726">
+    <Text UId="1727"> 2: Outgoing error; 3: Outgoing error, other errors present</Text>
+  </LineComment>
+  <NewLine UId="1728" />
+  <Blank Num="6" UId="1729" />
+  <LineComment UId="1730">
+    <Text UId="1731">-----------------------------------------------------------------------------</Text>
+  </LineComment>
+  <NewLine UId="1732" />
+  <Blank Num="6" UId="1733" />
+  <Token Text="IF" UId="1734" />
+  <Blank UId="1735" />
+  <Token Text="(" UId="1736" />
+  <Access Scope="LocalVariable" UId="1737">
+    <Symbol UId="1738">
+      <Component Name="statChannelType" UId="1739" />
+    </Symbol>
+  </Access>
+  <Blank UId="1740" />
+  <Token Text="=" UId="1741" />
+  <Blank UId="1742" />
+  <Access Scope="LiteralConstant" UId="1743">
+    <Constant UId="1744">
+      <ConstantValue UId="1746">1</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="1747" />
+  <Blank UId="1748" />
+  <Token Text="THEN" UId="1749" />
+  <Blank Num="2" UId="1750" />
+  <LineComment UId="1751">
+    <Text UId="1752"> 1: Input channel</Text>
+  </LineComment>
+  <NewLine UId="1753" />
+  <Blank Num="8" UId="1754" />
+  <NewLine UId="1755" />
+  <Blank Num="8" UId="1756" />
+  <Token Text="IF" UId="1757" />
+  <Blank UId="1758" />
+  <Access Scope="LocalVariable" UId="1759">
+    <Symbol UId="1760">
+      <Component Name="statAinfo" UId="1761" />
+      <Token Text="." UId="1762" />
+      <Component Name="addInfo" UId="1763" />
+      <Token Text="." UId="1764" />
+      <Component Name="diag" UId="1765">
+        <Token Text="[" UId="1766" />
+        <Access Scope="LocalVariable" UId="1767">
+          <Symbol UId="1768">
+            <Component Name="tempInfo" UId="1769" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1770" />
+      </Component>
+      <Token Text="." UId="1771" />
+      <Component Name="channelNumber" UId="1772" />
+    </Symbol>
+  </Access>
+  <Blank UId="1773" />
+  <Token Text="=" UId="1774" />
+  <Blank UId="1775" />
+  <Access Scope="LiteralConstant" UId="1776">
+    <Constant UId="1777">
+      <ConstantValue UId="1779">-32768</ConstantValue>
+    </Constant>
+  </Access>
+  <Blank UId="1780" />
+  <Token Text="THEN" UId="1781" />
+  <Blank UId="1782" />
+  <LineComment UId="1783">
+    <Text UId="1784"> identify module with module diagnostics only</Text>
+  </LineComment>
+  <NewLine UId="1785" />
+  <Blank Num="10" UId="1786" />
+  <Access Scope="LocalVariable" UId="1787">
+    <Symbol UId="1788">
+      <Component Name="diag" UId="1789" />
+      <Token Text="." UId="1790" />
+      <Component Name="moduleDiagOnly" UId="1791" />
+    </Symbol>
+  </Access>
+  <Blank UId="1792" />
+  <Token Text=":=" UId="1793" />
+  <Blank UId="1794" />
+  <Access Scope="LiteralConstant" UId="1795">
+    <Constant UId="1796">
+      <ConstantValue UId="1798">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="1799" />
+  <NewLine UId="1800" />
+  <Blank Num="10" UId="1801" />
+  <Access Scope="Call" UId="1802">
+    <CallInfo UId="1803" BlockType="FC">
+      <Instance Scope="GlobalVariable" UId="1805">
+        <Component Name="ModuleDiag" UId="1804" />
+      </Instance>
+      <Token Text="(" UId="1806" />
+      <Parameter Name="errorCode" UId="1807">
+        <Blank UId="1808" />
+        <Token Text=":=" UId="1809" />
+        <Blank UId="1810" />
+        <Access Scope="LocalVariable" UId="1811">
+          <Symbol UId="1812">
+            <Component Name="statAinfo" UId="1813" />
+            <Token Text="." UId="1814" />
+            <Component Name="addInfo" UId="1815" />
+            <Token Text="." UId="1816" />
+            <Component Name="diag" UId="1817">
+              <Token Text="[" UId="1818" />
+              <Access Scope="LocalVariable" UId="1819">
+                <Symbol UId="1820">
+                  <Component Name="tempInfo" UId="1821" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="1822" />
+            </Component>
+            <Token Text="." UId="1823" />
+            <Component Name="errorCode" UId="1824" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="1825" />
+      <NewLine UId="1826" />
+      <Blank Num="23" UId="1827" />
+      <Parameter Name="value" UId="1828">
+        <Blank UId="1829" />
+        <Token Text=":=" UId="1830" />
+        <Blank UId="1831" />
+        <Access Scope="LiteralConstant" UId="1832">
+          <Constant UId="1833">
+            <ConstantValue UId="1835">FALSE</ConstantValue>
+          </Constant>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="1836" />
+      <NewLine UId="1837" />
+      <Blank Num="23" UId="1838" />
+      <Parameter Name="diag" UId="1839">
+        <Blank UId="1840" />
+        <Token Text=":=" UId="1841" />
+        <Blank UId="1842" />
+        <Access Scope="LocalVariable" UId="1843">
+          <Symbol UId="1844">
+            <Component Name="diag" UId="1845" />
+            <Token Text="." UId="1846" />
+            <Component Name="input" UId="1847" />
+            <Token Text="." UId="1848" />
+            <Component Name="module" UId="1849" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="1850" />
+      <NewLine UId="1851" />
+      <Blank Num="23" UId="1852" />
+      <Parameter Name="errorCounter" UId="1853">
+        <Blank UId="1854" />
+        <Token Text=":=" UId="1855" />
+        <Blank UId="1856" />
+        <Access Scope="LocalVariable" UId="1857">
+          <Symbol UId="1858">
+            <Component Name="diag" UId="1859" />
+            <Token Text="." UId="1860" />
+            <Component Name="errorCounter" UId="1861" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text=")" UId="1862" />
+    </CallInfo>
+  </Access>
+  <Token Text=";" UId="1863" />
+  <NewLine UId="1864" />
+  <Blank Num="8" UId="1865" />
+  <Token Text="ELSE" UId="1866" />
+  <NewLine UId="1867" />
+  <Blank Num="10" UId="1868" />
+  <Access Scope="LocalVariable" UId="1869">
+    <Symbol UId="1870">
+      <Component Name="diag" UId="1871" />
+      <Token Text="." UId="1872" />
+      <Component Name="moduleDiagOnly" UId="1873" />
+    </Symbol>
+  </Access>
+  <Blank UId="1874" />
+  <Token Text=":=" UId="1875" />
+  <Blank UId="1876" />
+  <Access Scope="LiteralConstant" UId="1877">
+    <Constant UId="1878">
+      <ConstantValue UId="1880">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="1881" />
+  <NewLine UId="1882" />
+  <Blank Num="10" UId="1883" />
+  <NewLine UId="1884" />
+  <Blank Num="10" UId="1885" />
+  <Token Text="IF" UId="1886" />
+  <Blank UId="1887" />
+  <Token Text="(" UId="1888" />
+  <Token Text="(" UId="1889" />
+  <Access Scope="LocalVariable" UId="1890">
+    <Symbol UId="1891">
+      <Component Name="statAinfo" UId="1892" />
+      <Token Text="." UId="1893" />
+      <Component Name="addInfo" UId="1894" />
+      <Token Text="." UId="1895" />
+      <Component Name="diag" UId="1896">
+        <Token Text="[" UId="1897" />
+        <Access Scope="LocalVariable" UId="1898">
+          <Symbol UId="1899">
+            <Component Name="tempInfo" UId="1900" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1901" />
+      </Component>
+      <Token Text="." UId="1902" />
+      <Component Name="channelNumber" UId="1903" />
+    </Symbol>
+  </Access>
+  <Blank UId="1904" />
+  <Token Text="&gt;=" UId="1905" />
+  <Blank UId="1906" />
+  <Access Scope="LiteralConstant" UId="1907">
+    <Constant UId="1908">
+      <ConstantValue UId="1910">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="1911" />
+  <Blank UId="1912" />
+  <Token Text="AND" UId="1913" />
+  <Blank UId="1914" />
+  <LineComment UId="1915">
+    <Text UId="1916"> check array limits (lower limit)</Text>
+  </LineComment>
+  <NewLine UId="1917" />
+  <Blank Num="12" UId="1918" />
+  <Token Text="(" UId="1919" />
+  <Access Scope="LocalVariable" UId="1920">
+    <Symbol UId="1921">
+      <Component Name="statAinfo" UId="1922" />
+      <Token Text="." UId="1923" />
+      <Component Name="addInfo" UId="1924" />
+      <Token Text="." UId="1925" />
+      <Component Name="diag" UId="1926">
+        <Token Text="[" UId="1927" />
+        <Access Scope="LocalVariable" UId="1928">
+          <Symbol UId="1929">
+            <Component Name="tempInfo" UId="1930" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1931" />
+      </Component>
+      <Token Text="." UId="1932" />
+      <Component Name="channelNumber" UId="1933" />
+    </Symbol>
+  </Access>
+  <Blank UId="1934" />
+  <Token Text="&lt;=" UId="1935" />
+  <Blank UId="1936" />
+  <Access Scope="LocalVariable" UId="1937">
+    <Symbol UId="1938">
+      <Component Name="diag" UId="1939" />
+      <Token Text="." UId="1940" />
+      <Component Name="input" UId="1941" />
+      <Token Text="." UId="1942" />
+      <Component Name="channel" UId="1943" />
+      <Token Text="." UId="1944" />
+      <Component Name="chMax" UId="1945" />
+    </Symbol>
+  </Access>
+  <Token Text=")" UId="1946" />
+  <Token Text=")" UId="1947" />
+  <Blank UId="1948" />
+  <Token Text="THEN" UId="1949" />
+  <Blank UId="1950" />
+  <LineComment UId="1951">
+    <Text UId="1952"> check array limits (upper limit)</Text>
+  </LineComment>
+  <NewLine UId="1953" />
+  <Blank Num="12" UId="1954" />
+  <Token Text="IF" UId="1955" />
+  <Blank UId="1956" />
+  <Token Text="(" UId="1957" />
+  <Access Scope="LocalVariable" UId="1958">
+    <Symbol UId="1959">
+      <Component Name="statAinfo" UId="1960" />
+      <Token Text="." UId="1961" />
+      <Component Name="addInfo" UId="1962" />
+      <Token Text="." UId="1963" />
+      <Component Name="diag" UId="1964">
+        <Token Text="[" UId="1965" />
+        <Access Scope="LocalVariable" UId="1966">
+          <Symbol UId="1967">
+            <Component Name="tempInfo" UId="1968" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1969" />
+      </Component>
+      <Token Text="." UId="1970" />
+      <Component Name="errorCode" UId="1971" />
+    </Symbol>
+  </Access>
+  <Blank UId="1972" />
+  <Token Text="=" UId="1973" />
+  <Blank UId="1974" />
+  <Access Scope="LocalVariable" UId="1975">
+    <Symbol UId="1976">
+      <Component Name="diag" UId="1977" />
+      <Token Text="." UId="1978" />
+      <Component Name="input" UId="1979" />
+      <Token Text="." UId="1980" />
+      <Component Name="channel" UId="1981" />
+      <Token Text="." UId="1982" />
+      <Component Name="ch" UId="1983">
+        <Token Text="[" UId="1984" />
+        <Access Scope="LocalVariable" UId="1985">
+          <Symbol UId="1986">
+            <Component Name="statAinfo" UId="1987" />
+            <Token Text="." UId="1988" />
+            <Component Name="addInfo" UId="1989" />
+            <Token Text="." UId="1990" />
+            <Component Name="diag" UId="1991">
+              <Token Text="[" UId="1992" />
+              <Access Scope="LocalVariable" UId="1993">
+                <Symbol UId="1994">
+                  <Component Name="tempInfo" UId="1995" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="1996" />
+            </Component>
+            <Token Text="." UId="1997" />
+            <Component Name="channelNumber" UId="1998" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="1999" />
+      </Component>
+      <Token Text="." UId="2000" />
+      <Component Name="errorCode" UId="2001" />
+    </Symbol>
+  </Access>
+  <Token Text=")" UId="2002" />
+  <Blank UId="2003" />
+  <Token Text="THEN" UId="2004" />
+  <NewLine UId="2005" />
+  <Blank Num="14" UId="2006" />
+  <Access Scope="LocalVariable" UId="2007">
+    <Symbol UId="2008">
+      <Component Name="diag" UId="2009" />
+      <Token Text="." UId="2010" />
+      <Component Name="input" UId="2011" />
+      <Token Text="." UId="2012" />
+      <Component Name="channel" UId="2013" />
+      <Token Text="." UId="2014" />
+      <Component Name="ch" UId="2015">
+        <Token Text="[" UId="2016" />
+        <Access Scope="LocalVariable" UId="2017">
+          <Symbol UId="2018">
+            <Component Name="statAinfo" UId="2019" />
+            <Token Text="." UId="2020" />
+            <Component Name="addInfo" UId="2021" />
+            <Token Text="." UId="2022" />
+            <Component Name="diag" UId="2023">
+              <Token Text="[" UId="2024" />
+              <Access Scope="LocalVariable" UId="2025">
+                <Symbol UId="2026">
+                  <Component Name="tempInfo" UId="2027" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="2028" />
+            </Component>
+            <Token Text="." UId="2029" />
+            <Component Name="channelNumber" UId="2030" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2031" />
+      </Component>
+      <Token Text="." UId="2032" />
+      <Component Name="error" UId="2033" />
+    </Symbol>
+  </Access>
+  <Blank UId="2034" />
+  <Token Text=":=" UId="2035" />
+  <Blank UId="2036" />
+  <Access Scope="LiteralConstant" UId="2037">
+    <Constant UId="2038">
+      <ConstantValue UId="2040">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2041" />
+  <Blank UId="2042" />
+  <LineComment UId="2043">
+    <Text UId="2044"> Reset error</Text>
+  </LineComment>
+  <NewLine UId="2045" />
+  <Blank Num="14" UId="2046" />
+  <Access Scope="LocalVariable" UId="2047">
+    <Symbol UId="2048">
+      <Component Name="diag" UId="2049" />
+      <Token Text="." UId="2050" />
+      <Component Name="input" UId="2051" />
+      <Token Text="." UId="2052" />
+      <Component Name="channel" UId="2053" />
+      <Token Text="." UId="2054" />
+      <Component Name="ch" UId="2055">
+        <Token Text="[" UId="2056" />
+        <Access Scope="LocalVariable" UId="2057">
+          <Symbol UId="2058">
+            <Component Name="statAinfo" UId="2059" />
+            <Token Text="." UId="2060" />
+            <Component Name="addInfo" UId="2061" />
+            <Token Text="." UId="2062" />
+            <Component Name="diag" UId="2063">
+              <Token Text="[" UId="2064" />
+              <Access Scope="LocalVariable" UId="2065">
+                <Symbol UId="2066">
+                  <Component Name="tempInfo" UId="2067" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="2068" />
+            </Component>
+            <Token Text="." UId="2069" />
+            <Component Name="channelNumber" UId="2070" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2071" />
+      </Component>
+      <Token Text="." UId="2072" />
+      <Component Name="errorCode" UId="2073" />
+    </Symbol>
+  </Access>
+  <Blank UId="2074" />
+  <Token Text=":=" UId="2075" />
+  <Blank UId="2076" />
+  <Access Scope="LiteralConstant" UId="2077">
+    <Constant UId="2078">
+      <ConstantValue UId="2080">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2081" />
+  <Blank UId="2082" />
+  <LineComment UId="2083">
+    <Text UId="2084"> Reset error code</Text>
+  </LineComment>
+  <NewLine UId="2085" />
+  <Blank Num="12" UId="2086" />
+  <Token Text="END_IF" UId="2087" />
+  <Token Text=";" UId="2088" />
+  <NewLine UId="2089" />
+  <Blank Num="12" UId="2090" />
+  <Access Scope="LocalVariable" UId="2091">
+    <Symbol UId="2092">
+      <Component Name="diag" UId="2093" />
+      <Token Text="." UId="2094" />
+      <Component Name="errorCounter" UId="2095" />
+    </Symbol>
+  </Access>
+  <Blank UId="2096" />
+  <Token Text=":=" UId="2097" />
+  <Blank UId="2098" />
+  <Access Scope="LocalVariable" UId="2099">
+    <Symbol UId="2100">
+      <Component Name="diag" UId="2101" />
+      <Token Text="." UId="2102" />
+      <Component Name="errorCounter" UId="2103" />
+    </Symbol>
+  </Access>
+  <Blank UId="2104" />
+  <Token Text="-" UId="2105" />
+  <Blank UId="2106" />
+  <Access Scope="LiteralConstant" UId="2107">
+    <Constant UId="2108">
+      <ConstantValue UId="2110">1</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2111" />
+  <Blank UId="2112" />
+  <LineComment UId="2113">
+    <Text UId="2114"> decrement error counter</Text>
+  </LineComment>
+  <NewLine UId="2115" />
+  <Blank Num="12" UId="2116" />
+  <Access Scope="LocalVariable" UId="2117">
+    <Symbol UId="2118">
+      <Component Name="diag" UId="2119" />
+      <Token Text="." UId="2120" />
+      <Component Name="input" UId="2121" />
+      <Token Text="." UId="2122" />
+      <Component Name="channel" UId="2123" />
+      <Token Text="." UId="2124" />
+      <Component Name="areaLenError" UId="2125" />
+    </Symbol>
+  </Access>
+  <Blank UId="2126" />
+  <Token Text=":=" UId="2127" />
+  <Blank UId="2128" />
+  <Access Scope="LiteralConstant" UId="2129">
+    <Constant UId="2130">
+      <ConstantValue UId="2132">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2133" />
+  <Blank UId="2134" />
+  <LineComment UId="2135">
+    <Text UId="2136"> Reset area length error</Text>
+  </LineComment>
+  <NewLine UId="2137" />
+  <Blank Num="10" UId="2138" />
+  <Token Text="ELSE" UId="2139" />
+  <NewLine UId="2140" />
+  <Blank Num="12" UId="2141" />
+  <Access Scope="LocalVariable" UId="2142">
+    <Symbol UId="2143">
+      <Component Name="diag" UId="2144" />
+      <Token Text="." UId="2145" />
+      <Component Name="input" UId="2146" />
+      <Token Text="." UId="2147" />
+      <Component Name="channel" UId="2148" />
+      <Token Text="." UId="2149" />
+      <Component Name="areaLenError" UId="2150" />
+    </Symbol>
+  </Access>
+  <Blank UId="2151" />
+  <Token Text=":=" UId="2152" />
+  <Blank UId="2153" />
+  <Access Scope="LiteralConstant" UId="2154">
+    <Constant UId="2155">
+      <ConstantValue UId="2157">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2158" />
+  <Blank UId="2159" />
+  <LineComment UId="2160">
+    <Text UId="2161"> Set area length error</Text>
+  </LineComment>
+  <NewLine UId="2162" />
+  <Blank Num="10" UId="2163" />
+  <Token Text="END_IF" UId="2164" />
+  <Token Text=";" UId="2165" />
+  <NewLine UId="2166" />
+  <Blank Num="8" UId="2167" />
+  <Token Text="END_IF" UId="2168" />
+  <Token Text=";" UId="2169" />
+  <NewLine UId="2170" />
+  <Blank Num="8" UId="2171" />
+  <LineComment UId="2172">
+    <Text UId="2173">-----------------------------------------------------------------------------   </Text>
+  </LineComment>
+  <NewLine UId="2174" />
+  <Blank Num="6" UId="2175" />
+  <Token Text="ELSIF" UId="2176" />
+  <Blank UId="2177" />
+  <Token Text="(" UId="2178" />
+  <Access Scope="LocalVariable" UId="2179">
+    <Symbol UId="2180">
+      <Component Name="statChannelType" UId="2181" />
+    </Symbol>
+  </Access>
+  <Blank UId="2182" />
+  <Token Text="=" UId="2183" />
+  <Blank UId="2184" />
+  <Access Scope="LiteralConstant" UId="2185">
+    <Constant UId="2186">
+      <ConstantValue UId="2188">2</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="2189" />
+  <Blank UId="2190" />
+  <Token Text="THEN" UId="2191" />
+  <Blank UId="2192" />
+  <LineComment UId="2193">
+    <Text UId="2194"> 2: Output channel</Text>
+  </LineComment>
+  <NewLine UId="2195" />
+  <Blank Num="8" UId="2196" />
+  <NewLine UId="2197" />
+  <Blank Num="8" UId="2198" />
+  <Token Text="IF" UId="2199" />
+  <Blank UId="2200" />
+  <Access Scope="LocalVariable" UId="2201">
+    <Symbol UId="2202">
+      <Component Name="statAinfo" UId="2203" />
+      <Token Text="." UId="2204" />
+      <Component Name="addInfo" UId="2205" />
+      <Token Text="." UId="2206" />
+      <Component Name="diag" UId="2207">
+        <Token Text="[" UId="2208" />
+        <Access Scope="LocalVariable" UId="2209">
+          <Symbol UId="2210">
+            <Component Name="tempInfo" UId="2211" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2212" />
+      </Component>
+      <Token Text="." UId="2213" />
+      <Component Name="channelNumber" UId="2214" />
+    </Symbol>
+  </Access>
+  <Blank UId="2215" />
+  <Token Text="=" UId="2216" />
+  <Blank UId="2217" />
+  <Access Scope="LiteralConstant" UId="2218">
+    <Constant UId="2219">
+      <ConstantValue UId="2221">-32768</ConstantValue>
+    </Constant>
+  </Access>
+  <Blank UId="2222" />
+  <Token Text="THEN" UId="2223" />
+  <Blank UId="2224" />
+  <LineComment UId="2225">
+    <Text UId="2226"> identify module with module diagnostics only</Text>
+  </LineComment>
+  <NewLine UId="2227" />
+  <Blank Num="10" UId="2228" />
+  <Access Scope="LocalVariable" UId="2229">
+    <Symbol UId="2230">
+      <Component Name="diag" UId="2231" />
+      <Token Text="." UId="2232" />
+      <Component Name="moduleDiagOnly" UId="2233" />
+    </Symbol>
+  </Access>
+  <Blank UId="2234" />
+  <Token Text=":=" UId="2235" />
+  <Blank UId="2236" />
+  <Access Scope="LiteralConstant" UId="2237">
+    <Constant UId="2238">
+      <ConstantValue UId="2240">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2241" />
+  <NewLine UId="2242" />
+  <Blank Num="10" UId="2243" />
+  <Access Scope="Call" UId="2244">
+    <CallInfo UId="2245" BlockType="FC">
+      <Instance Scope="GlobalVariable" UId="2247">
+        <Component Name="ModuleDiag" UId="2246" />
+      </Instance>
+      <Token Text="(" UId="2248" />
+      <Parameter Name="errorCode" UId="2249">
+        <Blank UId="2250" />
+        <Token Text=":=" UId="2251" />
+        <Blank UId="2252" />
+        <Access Scope="LocalVariable" UId="2253">
+          <Symbol UId="2254">
+            <Component Name="statAinfo" UId="2255" />
+            <Token Text="." UId="2256" />
+            <Component Name="addInfo" UId="2257" />
+            <Token Text="." UId="2258" />
+            <Component Name="diag" UId="2259">
+              <Token Text="[" UId="2260" />
+              <Access Scope="LocalVariable" UId="2261">
+                <Symbol UId="2262">
+                  <Component Name="tempInfo" UId="2263" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="2264" />
+            </Component>
+            <Token Text="." UId="2265" />
+            <Component Name="errorCode" UId="2266" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="2267" />
+      <NewLine UId="2268" />
+      <Blank Num="23" UId="2269" />
+      <Parameter Name="value" UId="2270">
+        <Blank UId="2271" />
+        <Token Text=":=" UId="2272" />
+        <Blank UId="2273" />
+        <Access Scope="LiteralConstant" UId="2274">
+          <Constant UId="2275">
+            <ConstantValue UId="2277">FALSE</ConstantValue>
+          </Constant>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="2278" />
+      <NewLine UId="2279" />
+      <Blank Num="23" UId="2280" />
+      <Parameter Name="diag" UId="2281">
+        <Blank UId="2282" />
+        <Token Text=":=" UId="2283" />
+        <Blank UId="2284" />
+        <Access Scope="LocalVariable" UId="2285">
+          <Symbol UId="2286">
+            <Component Name="diag" UId="2287" />
+            <Token Text="." UId="2288" />
+            <Component Name="output" UId="2289" />
+            <Token Text="." UId="2290" />
+            <Component Name="module" UId="2291" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="2292" />
+      <NewLine UId="2293" />
+      <Blank Num="23" UId="2294" />
+      <Parameter Name="errorCounter" UId="2295">
+        <Blank UId="2296" />
+        <Token Text=":=" UId="2297" />
+        <Blank UId="2298" />
+        <Access Scope="LocalVariable" UId="2299">
+          <Symbol UId="2300">
+            <Component Name="diag" UId="2301" />
+            <Token Text="." UId="2302" />
+            <Component Name="errorCounter" UId="2303" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text=")" UId="2304" />
+    </CallInfo>
+  </Access>
+  <Token Text=";" UId="2305" />
+  <NewLine UId="2306" />
+  <Blank Num="8" UId="2307" />
+  <Token Text="ELSE" UId="2308" />
+  <NewLine UId="2309" />
+  <Blank Num="10" UId="2310" />
+  <Access Scope="LocalVariable" UId="2311">
+    <Symbol UId="2312">
+      <Component Name="diag" UId="2313" />
+      <Token Text="." UId="2314" />
+      <Component Name="moduleDiagOnly" UId="2315" />
+    </Symbol>
+  </Access>
+  <Blank UId="2316" />
+  <Token Text=":=" UId="2317" />
+  <Blank UId="2318" />
+  <Access Scope="LiteralConstant" UId="2319">
+    <Constant UId="2320">
+      <ConstantValue UId="2322">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2323" />
+  <NewLine UId="2324" />
+  <Blank Num="10" UId="2325" />
+  <NewLine UId="2326" />
+  <Blank Num="10" UId="2327" />
+  <Token Text="IF" UId="2328" />
+  <Blank UId="2329" />
+  <Token Text="(" UId="2330" />
+  <Token Text="(" UId="2331" />
+  <Access Scope="LocalVariable" UId="2332">
+    <Symbol UId="2333">
+      <Component Name="statAinfo" UId="2334" />
+      <Token Text="." UId="2335" />
+      <Component Name="addInfo" UId="2336" />
+      <Token Text="." UId="2337" />
+      <Component Name="diag" UId="2338">
+        <Token Text="[" UId="2339" />
+        <Access Scope="LocalVariable" UId="2340">
+          <Symbol UId="2341">
+            <Component Name="tempInfo" UId="2342" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2343" />
+      </Component>
+      <Token Text="." UId="2344" />
+      <Component Name="channelNumber" UId="2345" />
+    </Symbol>
+  </Access>
+  <Blank UId="2346" />
+  <Token Text="&gt;=" UId="2347" />
+  <Blank UId="2348" />
+  <Access Scope="LiteralConstant" UId="2349">
+    <Constant UId="2350">
+      <ConstantValue UId="2352">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="2353" />
+  <Blank UId="2354" />
+  <Token Text="AND" UId="2355" />
+  <Blank UId="2356" />
+  <LineComment UId="2357">
+    <Text UId="2358"> check array limits (lower limit)</Text>
+  </LineComment>
+  <NewLine UId="2359" />
+  <Blank Num="12" UId="2360" />
+  <Token Text="(" UId="2361" />
+  <Access Scope="LocalVariable" UId="2362">
+    <Symbol UId="2363">
+      <Component Name="statAinfo" UId="2364" />
+      <Token Text="." UId="2365" />
+      <Component Name="addInfo" UId="2366" />
+      <Token Text="." UId="2367" />
+      <Component Name="diag" UId="2368">
+        <Token Text="[" UId="2369" />
+        <Access Scope="LocalVariable" UId="2370">
+          <Symbol UId="2371">
+            <Component Name="tempInfo" UId="2372" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2373" />
+      </Component>
+      <Token Text="." UId="2374" />
+      <Component Name="channelNumber" UId="2375" />
+    </Symbol>
+  </Access>
+  <Blank UId="2376" />
+  <Token Text="&lt;=" UId="2377" />
+  <Blank UId="2378" />
+  <Access Scope="LocalVariable" UId="2379">
+    <Symbol UId="2380">
+      <Component Name="diag" UId="2381" />
+      <Token Text="." UId="2382" />
+      <Component Name="output" UId="2383" />
+      <Token Text="." UId="2384" />
+      <Component Name="channel" UId="2385" />
+      <Token Text="." UId="2386" />
+      <Component Name="chMax" UId="2387" />
+    </Symbol>
+  </Access>
+  <Token Text=")" UId="2388" />
+  <Token Text=")" UId="2389" />
+  <Blank UId="2390" />
+  <Token Text="THEN" UId="2391" />
+  <Blank UId="2392" />
+  <LineComment UId="2393">
+    <Text UId="2394"> check array limits (upper limit)</Text>
+  </LineComment>
+  <NewLine UId="2395" />
+  <Blank Num="12" UId="2396" />
+  <Token Text="IF" UId="2397" />
+  <Blank UId="2398" />
+  <Token Text="(" UId="2399" />
+  <Access Scope="LocalVariable" UId="2400">
+    <Symbol UId="2401">
+      <Component Name="statAinfo" UId="2402" />
+      <Token Text="." UId="2403" />
+      <Component Name="addInfo" UId="2404" />
+      <Token Text="." UId="2405" />
+      <Component Name="diag" UId="2406">
+        <Token Text="[" UId="2407" />
+        <Access Scope="LocalVariable" UId="2408">
+          <Symbol UId="2409">
+            <Component Name="tempInfo" UId="2410" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2411" />
+      </Component>
+      <Token Text="." UId="2412" />
+      <Component Name="errorCode" UId="2413" />
+    </Symbol>
+  </Access>
+  <Blank UId="2414" />
+  <Token Text="=" UId="2415" />
+  <Blank UId="2416" />
+  <Access Scope="LocalVariable" UId="2417">
+    <Symbol UId="2418">
+      <Component Name="diag" UId="2419" />
+      <Token Text="." UId="2420" />
+      <Component Name="output" UId="2421" />
+      <Token Text="." UId="2422" />
+      <Component Name="channel" UId="2423" />
+      <Token Text="." UId="2424" />
+      <Component Name="ch" UId="2425">
+        <Token Text="[" UId="2426" />
+        <Access Scope="LocalVariable" UId="2427">
+          <Symbol UId="2428">
+            <Component Name="statAinfo" UId="2429" />
+            <Token Text="." UId="2430" />
+            <Component Name="addInfo" UId="2431" />
+            <Token Text="." UId="2432" />
+            <Component Name="diag" UId="2433">
+              <Token Text="[" UId="2434" />
+              <Access Scope="LocalVariable" UId="2435">
+                <Symbol UId="2436">
+                  <Component Name="tempInfo" UId="2437" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="2438" />
+            </Component>
+            <Token Text="." UId="2439" />
+            <Component Name="channelNumber" UId="2440" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2441" />
+      </Component>
+      <Token Text="." UId="2442" />
+      <Component Name="errorCode" UId="2443" />
+    </Symbol>
+  </Access>
+  <Token Text=")" UId="2444" />
+  <Blank UId="2445" />
+  <Token Text="THEN" UId="2446" />
+  <NewLine UId="2447" />
+  <Blank Num="14" UId="2448" />
+  <Access Scope="LocalVariable" UId="2449">
+    <Symbol UId="2450">
+      <Component Name="diag" UId="2451" />
+      <Token Text="." UId="2452" />
+      <Component Name="output" UId="2453" />
+      <Token Text="." UId="2454" />
+      <Component Name="channel" UId="2455" />
+      <Token Text="." UId="2456" />
+      <Component Name="ch" UId="2457">
+        <Token Text="[" UId="2458" />
+        <Access Scope="LocalVariable" UId="2459">
+          <Symbol UId="2460">
+            <Component Name="statAinfo" UId="2461" />
+            <Token Text="." UId="2462" />
+            <Component Name="addInfo" UId="2463" />
+            <Token Text="." UId="2464" />
+            <Component Name="diag" UId="2465">
+              <Token Text="[" UId="2466" />
+              <Access Scope="LocalVariable" UId="2467">
+                <Symbol UId="2468">
+                  <Component Name="tempInfo" UId="2469" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="2470" />
+            </Component>
+            <Token Text="." UId="2471" />
+            <Component Name="channelNumber" UId="2472" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2473" />
+      </Component>
+      <Token Text="." UId="2474" />
+      <Component Name="error" UId="2475" />
+    </Symbol>
+  </Access>
+  <Blank UId="2476" />
+  <Token Text=":=" UId="2477" />
+  <Blank UId="2478" />
+  <Access Scope="LiteralConstant" UId="2479">
+    <Constant UId="2480">
+      <ConstantValue UId="2482">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2483" />
+  <Blank UId="2484" />
+  <LineComment UId="2485">
+    <Text UId="2486"> Reset error</Text>
+  </LineComment>
+  <NewLine UId="2487" />
+  <Blank Num="14" UId="2488" />
+  <Access Scope="LocalVariable" UId="2489">
+    <Symbol UId="2490">
+      <Component Name="diag" UId="2491" />
+      <Token Text="." UId="2492" />
+      <Component Name="output" UId="2493" />
+      <Token Text="." UId="2494" />
+      <Component Name="channel" UId="2495" />
+      <Token Text="." UId="2496" />
+      <Component Name="ch" UId="2497">
+        <Token Text="[" UId="2498" />
+        <Access Scope="LocalVariable" UId="2499">
+          <Symbol UId="2500">
+            <Component Name="statAinfo" UId="2501" />
+            <Token Text="." UId="2502" />
+            <Component Name="addInfo" UId="2503" />
+            <Token Text="." UId="2504" />
+            <Component Name="diag" UId="2505">
+              <Token Text="[" UId="2506" />
+              <Access Scope="LocalVariable" UId="2507">
+                <Symbol UId="2508">
+                  <Component Name="tempInfo" UId="2509" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="2510" />
+            </Component>
+            <Token Text="." UId="2511" />
+            <Component Name="channelNumber" UId="2512" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2513" />
+      </Component>
+      <Token Text="." UId="2514" />
+      <Component Name="errorCode" UId="2515" />
+    </Symbol>
+  </Access>
+  <Blank UId="2516" />
+  <Token Text=":=" UId="2517" />
+  <Blank UId="2518" />
+  <Access Scope="LiteralConstant" UId="2519">
+    <Constant UId="2520">
+      <ConstantValue UId="2522">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2523" />
+  <Blank UId="2524" />
+  <LineComment UId="2525">
+    <Text UId="2526"> Reset error code</Text>
+  </LineComment>
+  <NewLine UId="2527" />
+  <Blank Num="12" UId="2528" />
+  <Token Text="END_IF" UId="2529" />
+  <Token Text=";" UId="2530" />
+  <NewLine UId="2531" />
+  <Blank Num="12" UId="2532" />
+  <Access Scope="LocalVariable" UId="2533">
+    <Symbol UId="2534">
+      <Component Name="diag" UId="2535" />
+      <Token Text="." UId="2536" />
+      <Component Name="errorCounter" UId="2537" />
+    </Symbol>
+  </Access>
+  <Blank UId="2538" />
+  <Token Text=":=" UId="2539" />
+  <Blank UId="2540" />
+  <Access Scope="LocalVariable" UId="2541">
+    <Symbol UId="2542">
+      <Component Name="diag" UId="2543" />
+      <Token Text="." UId="2544" />
+      <Component Name="errorCounter" UId="2545" />
+    </Symbol>
+  </Access>
+  <Blank UId="2546" />
+  <Token Text="-" UId="2547" />
+  <Blank UId="2548" />
+  <Access Scope="LiteralConstant" UId="2549">
+    <Constant UId="2550">
+      <ConstantValue UId="2552">1</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2553" />
+  <Blank UId="2554" />
+  <LineComment UId="2555">
+    <Text UId="2556"> decrement error counter</Text>
+  </LineComment>
+  <NewLine UId="2557" />
+  <Blank Num="12" UId="2558" />
+  <Access Scope="LocalVariable" UId="2559">
+    <Symbol UId="2560">
+      <Component Name="diag" UId="2561" />
+      <Token Text="." UId="2562" />
+      <Component Name="output" UId="2563" />
+      <Token Text="." UId="2564" />
+      <Component Name="channel" UId="2565" />
+      <Token Text="." UId="2566" />
+      <Component Name="areaLenError" UId="2567" />
+    </Symbol>
+  </Access>
+  <Blank UId="2568" />
+  <Token Text=":=" UId="2569" />
+  <Blank UId="2570" />
+  <Access Scope="LiteralConstant" UId="2571">
+    <Constant UId="2572">
+      <ConstantValue UId="2574">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2575" />
+  <Blank UId="2576" />
+  <LineComment UId="2577">
+    <Text UId="2578"> Reset area length error</Text>
+  </LineComment>
+  <NewLine UId="2579" />
+  <Blank Num="10" UId="2580" />
+  <Token Text="ELSE" UId="2581" />
+  <NewLine UId="2582" />
+  <Blank Num="12" UId="2583" />
+  <Access Scope="LocalVariable" UId="2584">
+    <Symbol UId="2585">
+      <Component Name="diag" UId="2586" />
+      <Token Text="." UId="2587" />
+      <Component Name="output" UId="2588" />
+      <Token Text="." UId="2589" />
+      <Component Name="channel" UId="2590" />
+      <Token Text="." UId="2591" />
+      <Component Name="areaLenError" UId="2592" />
+    </Symbol>
+  </Access>
+  <Blank UId="2593" />
+  <Token Text=":=" UId="2594" />
+  <Blank UId="2595" />
+  <Access Scope="LiteralConstant" UId="2596">
+    <Constant UId="2597">
+      <ConstantValue UId="2599">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2600" />
+  <Blank UId="2601" />
+  <LineComment UId="2602">
+    <Text UId="2603"> Set area length error</Text>
+  </LineComment>
+  <NewLine UId="2604" />
+  <Blank Num="10" UId="2605" />
+  <Token Text="END_IF" UId="2606" />
+  <Token Text=";" UId="2607" />
+  <NewLine UId="2608" />
+  <Blank Num="8" UId="2609" />
+  <Token Text="END_IF" UId="2610" />
+  <Token Text=";" UId="2611" />
+  <NewLine UId="2612" />
+  <Blank Num="8" UId="2613" />
+  <LineComment UId="2614">
+    <Text UId="2615">----------------------------------------------------------------------------- </Text>
+  </LineComment>
+  <NewLine UId="2616" />
+  <Blank Num="6" UId="2617" />
+  <Token Text="ELSIF" UId="2618" />
+  <Blank UId="2619" />
+  <Token Text="(" UId="2620" />
+  <Access Scope="LocalVariable" UId="2621">
+    <Symbol UId="2622">
+      <Component Name="statChannelType" UId="2623" />
+    </Symbol>
+  </Access>
+  <Blank UId="2624" />
+  <Token Text="=" UId="2625" />
+  <Blank UId="2626" />
+  <Access Scope="LiteralConstant" UId="2627">
+    <Constant UId="2628">
+      <ConstantValue UId="2630">3</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="2631" />
+  <Blank UId="2632" />
+  <Token Text="THEN" UId="2633" />
+  <Blank UId="2634" />
+  <LineComment UId="2635">
+    <Text UId="2636"> 3: Input/output channel</Text>
+  </LineComment>
+  <NewLine UId="2637" />
+  <Blank Num="8" UId="2638" />
+  <NewLine UId="2639" />
+  <Blank Num="8" UId="2640" />
+  <Token Text="IF" UId="2641" />
+  <Blank UId="2642" />
+  <Access Scope="LocalVariable" UId="2643">
+    <Symbol UId="2644">
+      <Component Name="statAinfo" UId="2645" />
+      <Token Text="." UId="2646" />
+      <Component Name="addInfo" UId="2647" />
+      <Token Text="." UId="2648" />
+      <Component Name="diag" UId="2649">
+        <Token Text="[" UId="2650" />
+        <Access Scope="LocalVariable" UId="2651">
+          <Symbol UId="2652">
+            <Component Name="tempInfo" UId="2653" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2654" />
+      </Component>
+      <Token Text="." UId="2655" />
+      <Component Name="channelNumber" UId="2656" />
+    </Symbol>
+  </Access>
+  <Blank UId="2657" />
+  <Token Text="=" UId="2658" />
+  <Blank UId="2659" />
+  <Access Scope="LiteralConstant" UId="2660">
+    <Constant UId="2661">
+      <ConstantValue UId="2663">-32768</ConstantValue>
+    </Constant>
+  </Access>
+  <Blank UId="2664" />
+  <Token Text="THEN" UId="2665" />
+  <Blank UId="2666" />
+  <LineComment UId="2667">
+    <Text UId="2668"> identify module with module diagnostics only</Text>
+  </LineComment>
+  <NewLine UId="2669" />
+  <Blank Num="10" UId="2670" />
+  <Access Scope="LocalVariable" UId="2671">
+    <Symbol UId="2672">
+      <Component Name="diag" UId="2673" />
+      <Token Text="." UId="2674" />
+      <Component Name="moduleDiagOnly" UId="2675" />
+    </Symbol>
+  </Access>
+  <Blank UId="2676" />
+  <Token Text=":=" UId="2677" />
+  <Blank UId="2678" />
+  <Access Scope="LiteralConstant" UId="2679">
+    <Constant UId="2680">
+      <ConstantValue UId="2682">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2683" />
+  <NewLine UId="2684" />
+  <Blank Num="10" UId="2685" />
+  <Access Scope="Call" UId="2686">
+    <CallInfo UId="2687" BlockType="FC">
+      <Instance Scope="GlobalVariable" UId="2689">
+        <Component Name="ModuleDiag" UId="2688" />
+      </Instance>
+      <Token Text="(" UId="2690" />
+      <Parameter Name="errorCode" UId="2691">
+        <Blank UId="2692" />
+        <Token Text=":=" UId="2693" />
+        <Blank UId="2694" />
+        <Access Scope="LocalVariable" UId="2695">
+          <Symbol UId="2696">
+            <Component Name="statAinfo" UId="2697" />
+            <Token Text="." UId="2698" />
+            <Component Name="addInfo" UId="2699" />
+            <Token Text="." UId="2700" />
+            <Component Name="diag" UId="2701">
+              <Token Text="[" UId="2702" />
+              <Access Scope="LocalVariable" UId="2703">
+                <Symbol UId="2704">
+                  <Component Name="tempInfo" UId="2705" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="2706" />
+            </Component>
+            <Token Text="." UId="2707" />
+            <Component Name="errorCode" UId="2708" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="2709" />
+      <NewLine UId="2710" />
+      <Blank Num="23" UId="2711" />
+      <Parameter Name="value" UId="2712">
+        <Blank UId="2713" />
+        <Token Text=":=" UId="2714" />
+        <Blank UId="2715" />
+        <Access Scope="LiteralConstant" UId="2716">
+          <Constant UId="2717">
+            <ConstantValue UId="2719">FALSE</ConstantValue>
+          </Constant>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="2720" />
+      <NewLine UId="2721" />
+      <Blank Num="23" UId="2722" />
+      <Parameter Name="diag" UId="2723">
+        <Blank UId="2724" />
+        <Token Text=":=" UId="2725" />
+        <Blank UId="2726" />
+        <Access Scope="LocalVariable" UId="2727">
+          <Symbol UId="2728">
+            <Component Name="diag" UId="2729" />
+            <Token Text="." UId="2730" />
+            <Component Name="inOut" UId="2731" />
+            <Token Text="." UId="2732" />
+            <Component Name="module" UId="2733" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text="," UId="2734" />
+      <NewLine UId="2735" />
+      <Blank Num="23" UId="2736" />
+      <Parameter Name="errorCounter" UId="2737">
+        <Blank UId="2738" />
+        <Token Text=":=" UId="2739" />
+        <Blank UId="2740" />
+        <Access Scope="LocalVariable" UId="2741">
+          <Symbol UId="2742">
+            <Component Name="diag" UId="2743" />
+            <Token Text="." UId="2744" />
+            <Component Name="errorCounter" UId="2745" />
+          </Symbol>
+        </Access>
+      </Parameter>
+      <Token Text=")" UId="2746" />
+    </CallInfo>
+  </Access>
+  <Token Text=";" UId="2747" />
+  <NewLine UId="2748" />
+  <Blank Num="8" UId="2749" />
+  <Token Text="ELSE" UId="2750" />
+  <NewLine UId="2751" />
+  <Blank Num="10" UId="2752" />
+  <Access Scope="LocalVariable" UId="2753">
+    <Symbol UId="2754">
+      <Component Name="diag" UId="2755" />
+      <Token Text="." UId="2756" />
+      <Component Name="moduleDiagOnly" UId="2757" />
+    </Symbol>
+  </Access>
+  <Blank UId="2758" />
+  <Token Text=":=" UId="2759" />
+  <Blank UId="2760" />
+  <Access Scope="LiteralConstant" UId="2761">
+    <Constant UId="2762">
+      <ConstantValue UId="2764">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2765" />
+  <NewLine UId="2766" />
+  <Blank Num="10" UId="2767" />
+  <NewLine UId="2768" />
+  <Blank Num="10" UId="2769" />
+  <Token Text="IF" UId="2770" />
+  <Blank UId="2771" />
+  <Token Text="(" UId="2772" />
+  <Token Text="(" UId="2773" />
+  <Access Scope="LocalVariable" UId="2774">
+    <Symbol UId="2775">
+      <Component Name="statAinfo" UId="2776" />
+      <Token Text="." UId="2777" />
+      <Component Name="addInfo" UId="2778" />
+      <Token Text="." UId="2779" />
+      <Component Name="diag" UId="2780">
+        <Token Text="[" UId="2781" />
+        <Access Scope="LocalVariable" UId="2782">
+          <Symbol UId="2783">
+            <Component Name="tempInfo" UId="2784" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2785" />
+      </Component>
+      <Token Text="." UId="2786" />
+      <Component Name="channelNumber" UId="2787" />
+    </Symbol>
+  </Access>
+  <Blank UId="2788" />
+  <Token Text="&gt;=" UId="2789" />
+  <Blank UId="2790" />
+  <Access Scope="LiteralConstant" UId="2791">
+    <Constant UId="2792">
+      <ConstantValue UId="2794">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="2795" />
+  <Blank UId="2796" />
+  <Token Text="AND" UId="2797" />
+  <Blank UId="2798" />
+  <LineComment UId="2799">
+    <Text UId="2800"> check array limits (lower limit)</Text>
+  </LineComment>
+  <NewLine UId="2801" />
+  <Blank Num="12" UId="2802" />
+  <Token Text="(" UId="2803" />
+  <Access Scope="LocalVariable" UId="2804">
+    <Symbol UId="2805">
+      <Component Name="statAinfo" UId="2806" />
+      <Token Text="." UId="2807" />
+      <Component Name="addInfo" UId="2808" />
+      <Token Text="." UId="2809" />
+      <Component Name="diag" UId="2810">
+        <Token Text="[" UId="2811" />
+        <Access Scope="LocalVariable" UId="2812">
+          <Symbol UId="2813">
+            <Component Name="tempInfo" UId="2814" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2815" />
+      </Component>
+      <Token Text="." UId="2816" />
+      <Component Name="channelNumber" UId="2817" />
+    </Symbol>
+  </Access>
+  <Blank UId="2818" />
+  <Token Text="&lt;=" UId="2819" />
+  <Blank UId="2820" />
+  <Access Scope="LocalVariable" UId="2821">
+    <Symbol UId="2822">
+      <Component Name="diag" UId="2823" />
+      <Token Text="." UId="2824" />
+      <Component Name="inOut" UId="2825" />
+      <Token Text="." UId="2826" />
+      <Component Name="channel" UId="2827" />
+      <Token Text="." UId="2828" />
+      <Component Name="chMax" UId="2829" />
+    </Symbol>
+  </Access>
+  <Token Text=")" UId="2830" />
+  <Token Text=")" UId="2831" />
+  <Blank UId="2832" />
+  <Token Text="THEN" UId="2833" />
+  <Blank UId="2834" />
+  <LineComment UId="2835">
+    <Text UId="2836"> check array limits (upper limit)</Text>
+  </LineComment>
+  <NewLine UId="2837" />
+  <Blank Num="12" UId="2838" />
+  <Token Text="IF" UId="2839" />
+  <Blank UId="2840" />
+  <Token Text="(" UId="2841" />
+  <Access Scope="LocalVariable" UId="2842">
+    <Symbol UId="2843">
+      <Component Name="statAinfo" UId="2844" />
+      <Token Text="." UId="2845" />
+      <Component Name="addInfo" UId="2846" />
+      <Token Text="." UId="2847" />
+      <Component Name="diag" UId="2848">
+        <Token Text="[" UId="2849" />
+        <Access Scope="LocalVariable" UId="2850">
+          <Symbol UId="2851">
+            <Component Name="tempInfo" UId="2852" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2853" />
+      </Component>
+      <Token Text="." UId="2854" />
+      <Component Name="errorCode" UId="2855" />
+    </Symbol>
+  </Access>
+  <Blank UId="2856" />
+  <Token Text="=" UId="2857" />
+  <Blank UId="2858" />
+  <Access Scope="LocalVariable" UId="2859">
+    <Symbol UId="2860">
+      <Component Name="diag" UId="2861" />
+      <Token Text="." UId="2862" />
+      <Component Name="inOut" UId="2863" />
+      <Token Text="." UId="2864" />
+      <Component Name="channel" UId="2865" />
+      <Token Text="." UId="2866" />
+      <Component Name="ch" UId="2867">
+        <Token Text="[" UId="2868" />
+        <Access Scope="LocalVariable" UId="2869">
+          <Symbol UId="2870">
+            <Component Name="statAinfo" UId="2871" />
+            <Token Text="." UId="2872" />
+            <Component Name="addInfo" UId="2873" />
+            <Token Text="." UId="2874" />
+            <Component Name="diag" UId="2875">
+              <Token Text="[" UId="2876" />
+              <Access Scope="LocalVariable" UId="2877">
+                <Symbol UId="2878">
+                  <Component Name="tempInfo" UId="2879" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="2880" />
+            </Component>
+            <Token Text="." UId="2881" />
+            <Component Name="channelNumber" UId="2882" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2883" />
+      </Component>
+      <Token Text="." UId="2884" />
+      <Component Name="errorCode" UId="2885" />
+    </Symbol>
+  </Access>
+  <Token Text=")" UId="2886" />
+  <Blank UId="2887" />
+  <Token Text="THEN" UId="2888" />
+  <NewLine UId="2889" />
+  <Blank Num="14" UId="2890" />
+  <Access Scope="LocalVariable" UId="2891">
+    <Symbol UId="2892">
+      <Component Name="diag" UId="2893" />
+      <Token Text="." UId="2894" />
+      <Component Name="inOut" UId="2895" />
+      <Token Text="." UId="2896" />
+      <Component Name="channel" UId="2897" />
+      <Token Text="." UId="2898" />
+      <Component Name="ch" UId="2899">
+        <Token Text="[" UId="2900" />
+        <Access Scope="LocalVariable" UId="2901">
+          <Symbol UId="2902">
+            <Component Name="statAinfo" UId="2903" />
+            <Token Text="." UId="2904" />
+            <Component Name="addInfo" UId="2905" />
+            <Token Text="." UId="2906" />
+            <Component Name="diag" UId="2907">
+              <Token Text="[" UId="2908" />
+              <Access Scope="LocalVariable" UId="2909">
+                <Symbol UId="2910">
+                  <Component Name="tempInfo" UId="2911" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="2912" />
+            </Component>
+            <Token Text="." UId="2913" />
+            <Component Name="channelNumber" UId="2914" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2915" />
+      </Component>
+      <Token Text="." UId="2916" />
+      <Component Name="error" UId="2917" />
+    </Symbol>
+  </Access>
+  <Blank UId="2918" />
+  <Token Text=":=" UId="2919" />
+  <Blank UId="2920" />
+  <Access Scope="LiteralConstant" UId="2921">
+    <Constant UId="2922">
+      <ConstantValue UId="2924">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2925" />
+  <Blank UId="2926" />
+  <LineComment UId="2927">
+    <Text UId="2928"> Reset error</Text>
+  </LineComment>
+  <NewLine UId="2929" />
+  <Blank Num="14" UId="2930" />
+  <Access Scope="LocalVariable" UId="2931">
+    <Symbol UId="2932">
+      <Component Name="diag" UId="2933" />
+      <Token Text="." UId="2934" />
+      <Component Name="inOut" UId="2935" />
+      <Token Text="." UId="2936" />
+      <Component Name="channel" UId="2937" />
+      <Token Text="." UId="2938" />
+      <Component Name="ch" UId="2939">
+        <Token Text="[" UId="2940" />
+        <Access Scope="LocalVariable" UId="2941">
+          <Symbol UId="2942">
+            <Component Name="statAinfo" UId="2943" />
+            <Token Text="." UId="2944" />
+            <Component Name="addInfo" UId="2945" />
+            <Token Text="." UId="2946" />
+            <Component Name="diag" UId="2947">
+              <Token Text="[" UId="2948" />
+              <Access Scope="LocalVariable" UId="2949">
+                <Symbol UId="2950">
+                  <Component Name="tempInfo" UId="2951" />
+                </Symbol>
+              </Access>
+              <Token Text="]" UId="2952" />
+            </Component>
+            <Token Text="." UId="2953" />
+            <Component Name="channelNumber" UId="2954" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="2955" />
+      </Component>
+      <Token Text="." UId="2956" />
+      <Component Name="errorCode" UId="2957" />
+    </Symbol>
+  </Access>
+  <Blank UId="2958" />
+  <Token Text=":=" UId="2959" />
+  <Blank UId="2960" />
+  <Access Scope="LiteralConstant" UId="2961">
+    <Constant UId="2962">
+      <ConstantValue UId="2964">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2965" />
+  <Blank UId="2966" />
+  <LineComment UId="2967">
+    <Text UId="2968"> Reset error code</Text>
+  </LineComment>
+  <NewLine UId="2969" />
+  <Blank Num="12" UId="2970" />
+  <Token Text="END_IF" UId="2971" />
+  <Token Text=";" UId="2972" />
+  <NewLine UId="2973" />
+  <Blank Num="12" UId="2974" />
+  <Access Scope="LocalVariable" UId="2975">
+    <Symbol UId="2976">
+      <Component Name="diag" UId="2977" />
+      <Token Text="." UId="2978" />
+      <Component Name="errorCounter" UId="2979" />
+    </Symbol>
+  </Access>
+  <Blank UId="2980" />
+  <Token Text=":=" UId="2981" />
+  <Blank UId="2982" />
+  <Access Scope="LocalVariable" UId="2983">
+    <Symbol UId="2984">
+      <Component Name="diag" UId="2985" />
+      <Token Text="." UId="2986" />
+      <Component Name="errorCounter" UId="2987" />
+    </Symbol>
+  </Access>
+  <Blank UId="2988" />
+  <Token Text="-" UId="2989" />
+  <Blank UId="2990" />
+  <Access Scope="LiteralConstant" UId="2991">
+    <Constant UId="2992">
+      <ConstantValue UId="2994">1</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="2995" />
+  <Blank UId="2996" />
+  <LineComment UId="2997">
+    <Text UId="2998"> decrement error counter</Text>
+  </LineComment>
+  <NewLine UId="2999" />
+  <Blank Num="12" UId="3000" />
+  <Access Scope="LocalVariable" UId="3001">
+    <Symbol UId="3002">
+      <Component Name="diag" UId="3003" />
+      <Token Text="." UId="3004" />
+      <Component Name="inOut" UId="3005" />
+      <Token Text="." UId="3006" />
+      <Component Name="channel" UId="3007" />
+      <Token Text="." UId="3008" />
+      <Component Name="areaLenError" UId="3009" />
+    </Symbol>
+  </Access>
+  <Blank UId="3010" />
+  <Token Text=":=" UId="3011" />
+  <Blank UId="3012" />
+  <Access Scope="LiteralConstant" UId="3013">
+    <Constant UId="3014">
+      <ConstantValue UId="3016">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="3017" />
+  <Blank UId="3018" />
+  <LineComment UId="3019">
+    <Text UId="3020"> Reset area length error</Text>
+  </LineComment>
+  <NewLine UId="3021" />
+  <Blank Num="10" UId="3022" />
+  <Token Text="ELSE" UId="3023" />
+  <NewLine UId="3024" />
+  <Blank Num="12" UId="3025" />
+  <Access Scope="LocalVariable" UId="3026">
+    <Symbol UId="3027">
+      <Component Name="diag" UId="3028" />
+      <Token Text="." UId="3029" />
+      <Component Name="inOut" UId="3030" />
+      <Token Text="." UId="3031" />
+      <Component Name="channel" UId="3032" />
+      <Token Text="." UId="3033" />
+      <Component Name="areaLenError" UId="3034" />
+    </Symbol>
+  </Access>
+  <Blank UId="3035" />
+  <Token Text=":=" UId="3036" />
+  <Blank UId="3037" />
+  <Access Scope="LiteralConstant" UId="3038">
+    <Constant UId="3039">
+      <ConstantValue UId="3041">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="3042" />
+  <Blank UId="3043" />
+  <LineComment UId="3044">
+    <Text UId="3045"> Set area length error</Text>
+  </LineComment>
+  <NewLine UId="3046" />
+  <Blank Num="10" UId="3047" />
+  <Token Text="END_IF" UId="3048" />
+  <Token Text=";" UId="3049" />
+  <NewLine UId="3050" />
+  <Blank Num="8" UId="3051" />
+  <Token Text="END_IF" UId="3052" />
+  <Token Text=";" UId="3053" />
+  <NewLine UId="3054" />
+  <Blank Num="6" UId="3055" />
+  <Token Text="END_IF" UId="3056" />
+  <Token Text=";" UId="3057" />
+  <NewLine UId="3058" />
+  <Blank Num="6" UId="3059" />
+  <LineComment UId="3060">
+    <Text UId="3061">============================================================================= </Text>
+  </LineComment>
+  <NewLine UId="3062" />
+  <Blank Num="4" UId="3063" />
+  <Token Text="END_IF" UId="3064" />
+  <Token Text=";" UId="3065" />
+  <NewLine UId="3066" />
+  <Blank Num="4" UId="3067" />
+  <NewLine UId="3068" />
+  <Blank Num="4" UId="3069" />
+  <Token Text="IF" UId="3070" />
+  <Blank UId="3071" />
+  <Access Scope="LocalVariable" UId="3072">
+    <Symbol UId="3073">
+      <Component Name="statAinfo" UId="3074" />
+      <Token Text="." UId="3075" />
+      <Component Name="addInfo" UId="3076" />
+      <Token Text="." UId="3077" />
+      <Component Name="diag" UId="3078">
+        <Token Text="[" UId="3079" />
+        <Access Scope="LocalVariable" UId="3080">
+          <Symbol UId="3081">
+            <Component Name="tempInfo" UId="3082" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="3083" />
+      </Component>
+      <Token Text="." UId="3084" />
+      <Component Name="channelNumber" UId="3085" />
+    </Symbol>
+  </Access>
+  <Blank UId="3086" />
+  <Token Text="&lt;&gt;" UId="3087" />
+  <Blank UId="3088" />
+  <Access Scope="LiteralConstant" UId="3089">
+    <Constant UId="3090">
+      <ConstantValue UId="3092">-32768</ConstantValue>
+    </Constant>
+  </Access>
+  <Blank UId="3093" />
+  <Token Text="AND" UId="3094" />
+  <Blank UId="3095" />
+  <Access Scope="LocalVariable" UId="3096">
+    <Symbol UId="3097">
+      <Component Name="statTinfo" UId="3098" />
+      <Token Text="." UId="3099" />
+      <Component Name="Channel" UId="3100" />
+    </Symbol>
+  </Access>
+  <Blank UId="3101" />
+  <Token Text="=" UId="3102" />
+  <Blank UId="3103" />
+  <Access Scope="LiteralConstant" UId="3104">
+    <Constant UId="3105">
+      <ConstantValue UId="3107">32768</ConstantValue>
+    </Constant>
+  </Access>
+  <Blank UId="3108" />
+  <Token Text="THEN" UId="3109" />
+  <Blank UId="3110" />
+  <LineComment UId="3111">
+    <Text UId="3112"> for ET200S: no error exists</Text>
+  </LineComment>
+  <NewLine UId="3113" />
+  <Blank Num="6" UId="3114" />
+  <NewLine UId="3115" />
+  <Blank Num="6" UId="3116" />
+  <Token Text="FOR" UId="3117" />
+  <Blank UId="3118" />
+  <Access Scope="LocalVariable" UId="3119">
+    <Symbol UId="3120">
+      <Component Name="tempIndex" UId="3121" />
+    </Symbol>
+  </Access>
+  <Blank UId="3122" />
+  <Token Text=":=" UId="3123" />
+  <Blank UId="3124" />
+  <Access Scope="LiteralConstant" UId="3125">
+    <Constant UId="3126">
+      <ConstantValue UId="3128">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Blank UId="3129" />
+  <Token Text="TO" UId="3130" />
+  <Blank UId="3131" />
+  <Access Scope="LocalVariable" UId="3132">
+    <Symbol UId="3133">
+      <Component Name="diag" UId="3134" />
+      <Token Text="." UId="3135" />
+      <Component Name="input" UId="3136" />
+      <Token Text="." UId="3137" />
+      <Component Name="channel" UId="3138" />
+      <Token Text="." UId="3139" />
+      <Component Name="chMax" UId="3140" />
+    </Symbol>
+  </Access>
+  <Blank UId="3141" />
+  <Token Text="DO" UId="3142" />
+  <Blank UId="3143" />
+  <LineComment UId="3144">
+    <Text UId="3145"> delete all input errors</Text>
+  </LineComment>
+  <NewLine UId="3146" />
+  <Blank Num="8" UId="3147" />
+  <Access Scope="LocalVariable" UId="3148">
+    <Symbol UId="3149">
+      <Component Name="diag" UId="3150" />
+      <Token Text="." UId="3151" />
+      <Component Name="input" UId="3152" />
+      <Token Text="." UId="3153" />
+      <Component Name="channel" UId="3154" />
+      <Token Text="." UId="3155" />
+      <Component Name="ch" UId="3156">
+        <Token Text="[" UId="3157" />
+        <Access Scope="LocalVariable" UId="3158">
+          <Symbol UId="3159">
+            <Component Name="tempIndex" UId="3160" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="3161" />
+      </Component>
+      <Token Text="." UId="3162" />
+      <Component Name="error" UId="3163" />
+    </Symbol>
+  </Access>
+  <Blank UId="3164" />
+  <Token Text=":=" UId="3165" />
+  <Blank UId="3166" />
+  <Access Scope="LiteralConstant" UId="3167">
+    <Constant UId="3168">
+      <ConstantValue UId="3170">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="3171" />
+  <Blank UId="3172" />
+  <LineComment UId="3173">
+    <Text UId="3174"> Reset error</Text>
+  </LineComment>
+  <NewLine UId="3175" />
+  <Blank Num="8" UId="3176" />
+  <Access Scope="LocalVariable" UId="3177">
+    <Symbol UId="3178">
+      <Component Name="diag" UId="3179" />
+      <Token Text="." UId="3180" />
+      <Component Name="input" UId="3181" />
+      <Token Text="." UId="3182" />
+      <Component Name="channel" UId="3183" />
+      <Token Text="." UId="3184" />
+      <Component Name="ch" UId="3185">
+        <Token Text="[" UId="3186" />
+        <Access Scope="LocalVariable" UId="3187">
+          <Symbol UId="3188">
+            <Component Name="tempIndex" UId="3189" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="3190" />
+      </Component>
+      <Token Text="." UId="3191" />
+      <Component Name="errorCode" UId="3192" />
+    </Symbol>
+  </Access>
+  <Blank UId="3193" />
+  <Token Text=":=" UId="3194" />
+  <Blank UId="3195" />
+  <Access Scope="LiteralConstant" UId="3196">
+    <Constant UId="3197">
+      <ConstantValue UId="3199">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="3200" />
+  <Blank UId="3201" />
+  <LineComment UId="3202">
+    <Text UId="3203"> Reset error code</Text>
+  </LineComment>
+  <NewLine UId="3204" />
+  <Blank Num="6" UId="3205" />
+  <Token Text="END_FOR" UId="3206" />
+  <Token Text=";" UId="3207" />
+  <NewLine UId="3208" />
+  <Blank Num="6" UId="3209" />
+  <NewLine UId="3210" />
+  <Blank Num="6" UId="3211" />
+  <Token Text="FOR" UId="3212" />
+  <Blank UId="3213" />
+  <Access Scope="LocalVariable" UId="3214">
+    <Symbol UId="3215">
+      <Component Name="tempIndex" UId="3216" />
+    </Symbol>
+  </Access>
+  <Blank UId="3217" />
+  <Token Text=":=" UId="3218" />
+  <Blank UId="3219" />
+  <Access Scope="LiteralConstant" UId="3220">
+    <Constant UId="3221">
+      <ConstantValue UId="3223">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Blank UId="3224" />
+  <Token Text="TO" UId="3225" />
+  <Blank UId="3226" />
+  <Access Scope="LocalVariable" UId="3227">
+    <Symbol UId="3228">
+      <Component Name="diag" UId="3229" />
+      <Token Text="." UId="3230" />
+      <Component Name="output" UId="3231" />
+      <Token Text="." UId="3232" />
+      <Component Name="channel" UId="3233" />
+      <Token Text="." UId="3234" />
+      <Component Name="chMax" UId="3235" />
+    </Symbol>
+  </Access>
+  <Blank UId="3236" />
+  <Token Text="DO" UId="3237" />
+  <Blank UId="3238" />
+  <LineComment UId="3239">
+    <Text UId="3240"> delete all output errors</Text>
+  </LineComment>
+  <NewLine UId="3241" />
+  <Blank Num="8" UId="3242" />
+  <Access Scope="LocalVariable" UId="3243">
+    <Symbol UId="3244">
+      <Component Name="diag" UId="3245" />
+      <Token Text="." UId="3246" />
+      <Component Name="output" UId="3247" />
+      <Token Text="." UId="3248" />
+      <Component Name="channel" UId="3249" />
+      <Token Text="." UId="3250" />
+      <Component Name="ch" UId="3251">
+        <Token Text="[" UId="3252" />
+        <Access Scope="LocalVariable" UId="3253">
+          <Symbol UId="3254">
+            <Component Name="tempIndex" UId="3255" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="3256" />
+      </Component>
+      <Token Text="." UId="3257" />
+      <Component Name="error" UId="3258" />
+    </Symbol>
+  </Access>
+  <Blank UId="3259" />
+  <Token Text=":=" UId="3260" />
+  <Blank UId="3261" />
+  <Access Scope="LiteralConstant" UId="3262">
+    <Constant UId="3263">
+      <ConstantValue UId="3265">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="3266" />
+  <Blank UId="3267" />
+  <LineComment UId="3268">
+    <Text UId="3269"> Reset error</Text>
+  </LineComment>
+  <NewLine UId="3270" />
+  <Blank Num="8" UId="3271" />
+  <Access Scope="LocalVariable" UId="3272">
+    <Symbol UId="3273">
+      <Component Name="diag" UId="3274" />
+      <Token Text="." UId="3275" />
+      <Component Name="output" UId="3276" />
+      <Token Text="." UId="3277" />
+      <Component Name="channel" UId="3278" />
+      <Token Text="." UId="3279" />
+      <Component Name="ch" UId="3280">
+        <Token Text="[" UId="3281" />
+        <Access Scope="LocalVariable" UId="3282">
+          <Symbol UId="3283">
+            <Component Name="tempIndex" UId="3284" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="3285" />
+      </Component>
+      <Token Text="." UId="3286" />
+      <Component Name="errorCode" UId="3287" />
+    </Symbol>
+  </Access>
+  <Blank UId="3288" />
+  <Token Text=":=" UId="3289" />
+  <Blank UId="3290" />
+  <Access Scope="LiteralConstant" UId="3291">
+    <Constant UId="3292">
+      <ConstantValue UId="3294">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="3295" />
+  <Blank UId="3296" />
+  <LineComment UId="3297">
+    <Text UId="3298"> Reset error code</Text>
+  </LineComment>
+  <NewLine UId="3299" />
+  <Blank Num="6" UId="3300" />
+  <Token Text="END_FOR" UId="3301" />
+  <Token Text=";" UId="3302" />
+  <NewLine UId="3303" />
+  <Blank Num="6" UId="3304" />
+  <NewLine UId="3305" />
+  <Blank Num="6" UId="3306" />
+  <Token Text="FOR" UId="3307" />
+  <Blank UId="3308" />
+  <Access Scope="LocalVariable" UId="3309">
+    <Symbol UId="3310">
+      <Component Name="tempIndex" UId="3311" />
+    </Symbol>
+  </Access>
+  <Blank UId="3312" />
+  <Token Text=":=" UId="3313" />
+  <Blank UId="3314" />
+  <Access Scope="LiteralConstant" UId="3315">
+    <Constant UId="3316">
+      <ConstantValue UId="3318">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Blank UId="3319" />
+  <Token Text="TO" UId="3320" />
+  <Blank UId="3321" />
+  <Access Scope="LocalVariable" UId="3322">
+    <Symbol UId="3323">
+      <Component Name="diag" UId="3324" />
+      <Token Text="." UId="3325" />
+      <Component Name="inOut" UId="3326" />
+      <Token Text="." UId="3327" />
+      <Component Name="channel" UId="3328" />
+      <Token Text="." UId="3329" />
+      <Component Name="chMax" UId="3330" />
+    </Symbol>
+  </Access>
+  <Blank UId="3331" />
+  <Token Text="DO" UId="3332" />
+  <Blank UId="3333" />
+  <LineComment UId="3334">
+    <Text UId="3335"> delete all in-/output errors</Text>
+  </LineComment>
+  <NewLine UId="3336" />
+  <Blank Num="8" UId="3337" />
+  <Access Scope="LocalVariable" UId="3338">
+    <Symbol UId="3339">
+      <Component Name="diag" UId="3340" />
+      <Token Text="." UId="3341" />
+      <Component Name="inOut" UId="3342" />
+      <Token Text="." UId="3343" />
+      <Component Name="channel" UId="3344" />
+      <Token Text="." UId="3345" />
+      <Component Name="ch" UId="3346">
+        <Token Text="[" UId="3347" />
+        <Access Scope="LocalVariable" UId="3348">
+          <Symbol UId="3349">
+            <Component Name="tempIndex" UId="3350" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="3351" />
+      </Component>
+      <Token Text="." UId="3352" />
+      <Component Name="error" UId="3353" />
+    </Symbol>
+  </Access>
+  <Blank UId="3354" />
+  <Token Text=":=" UId="3355" />
+  <Blank UId="3356" />
+  <Access Scope="LiteralConstant" UId="3357">
+    <Constant UId="3358">
+      <ConstantValue UId="3360">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="3361" />
+  <Blank UId="3362" />
+  <LineComment UId="3363">
+    <Text UId="3364"> Reset error</Text>
+  </LineComment>
+  <NewLine UId="3365" />
+  <Blank Num="8" UId="3366" />
+  <Access Scope="LocalVariable" UId="3367">
+    <Symbol UId="3368">
+      <Component Name="diag" UId="3369" />
+      <Token Text="." UId="3370" />
+      <Component Name="inOut" UId="3371" />
+      <Token Text="." UId="3372" />
+      <Component Name="channel" UId="3373" />
+      <Token Text="." UId="3374" />
+      <Component Name="ch" UId="3375">
+        <Token Text="[" UId="3376" />
+        <Access Scope="LocalVariable" UId="3377">
+          <Symbol UId="3378">
+            <Component Name="tempIndex" UId="3379" />
+          </Symbol>
+        </Access>
+        <Token Text="]" UId="3380" />
+      </Component>
+      <Token Text="." UId="3381" />
+      <Component Name="errorCode" UId="3382" />
+    </Symbol>
+  </Access>
+  <Blank UId="3383" />
+  <Token Text=":=" UId="3384" />
+  <Blank UId="3385" />
+  <Access Scope="LiteralConstant" UId="3386">
+    <Constant UId="3387">
+      <ConstantValue UId="3389">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="3390" />
+  <Blank UId="3391" />
+  <LineComment UId="3392">
+    <Text UId="3393"> Reset error code</Text>
+  </LineComment>
+  <NewLine UId="3394" />
+  <Blank Num="6" UId="3395" />
+  <Token Text="END_FOR" UId="3396" />
+  <Token Text=";" UId="3397" />
+  <NewLine UId="3398" />
+  <Blank Num="6" UId="3399" />
+  <NewLine UId="3400" />
+  <Blank Num="6" UId="3401" />
+  <Access Scope="LocalVariable" UId="3402">
+    <Symbol UId="3403">
+      <Component Name="diag" UId="3404" />
+      <Token Text="." UId="3405" />
+      <Component Name="errorCounter" UId="3406" />
+    </Symbol>
+  </Access>
+  <Blank UId="3407" />
+  <Token Text=":=" UId="3408" />
+  <Blank UId="3409" />
+  <Access Scope="LiteralConstant" UId="3410">
+    <Constant UId="3411">
+      <ConstantValue UId="3413">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="3414" />
+  <Blank UId="3415" />
+  <LineComment UId="3416">
+    <Text UId="3417"> reset error counter</Text>
+  </LineComment>
+  <NewLine UId="3418" />
+  <Blank Num="6" UId="3419" />
+  <NewLine UId="3420" />
+  <Blank Num="4" UId="3421" />
+  <Token Text="END_IF" UId="3422" />
+  <Token Text=";" UId="3423" />
+  <NewLine UId="3424" />
+  <Blank Num="2" UId="3425" />
+  <Token Text="END_FOR" UId="3426" />
+  <Token Text=";" UId="3427" />
+  <NewLine UId="3428" />
+  <Blank Num="2" UId="3429" />
+  <NewLine UId="3430" />
+  <Blank Num="2" UId="3431" />
+  <Token Text="IF" UId="3432" />
+  <Blank UId="3433" />
+  <Access Scope="LocalVariable" UId="3434">
+    <Symbol UId="3435">
+      <Component Name="diag" UId="3436" />
+      <Token Text="." UId="3437" />
+      <Component Name="errorCounter" UId="3438" />
+    </Symbol>
+  </Access>
+  <Blank UId="3439" />
+  <Token Text="&gt;" UId="3440" />
+  <Blank UId="3441" />
+  <Access Scope="LiteralConstant" UId="3442">
+    <Constant UId="3443">
+      <ConstantValue UId="3445">0</ConstantValue>
+    </Constant>
+  </Access>
+  <Blank UId="3446" />
+  <Token Text="THEN" UId="3447" />
+  <Blank UId="3448" />
+  <LineComment UId="3449">
+    <Text UId="3450"> check error counter</Text>
+  </LineComment>
+  <NewLine UId="3451" />
+  <Blank Num="4" UId="3452" />
+  <Access Scope="LocalVariable" UId="3453">
+    <Symbol UId="3454">
+      <Component Name="diag" UId="3455" />
+      <Token Text="." UId="3456" />
+      <Component Name="error" UId="3457" />
+    </Symbol>
+  </Access>
+  <Blank UId="3458" />
+  <Token Text=":=" UId="3459" />
+  <Blank UId="3460" />
+  <Access Scope="LiteralConstant" UId="3461">
+    <Constant UId="3462">
+      <ConstantValue UId="3464">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="3465" />
+  <Blank UId="3466" />
+  <LineComment UId="3467">
+    <Text UId="3468"> Set module error</Text>
+  </LineComment>
+  <NewLine UId="3469" />
+  <Blank Num="2" UId="3470" />
+  <Token Text="ELSE" UId="3471" />
+  <NewLine UId="3472" />
+  <Blank Num="4" UId="3473" />
+  <Access Scope="LocalVariable" UId="3474">
+    <Symbol UId="3475">
+      <Component Name="diag" UId="3476" />
+      <Token Text="." UId="3477" />
+      <Component Name="error" UId="3478" />
+    </Symbol>
+  </Access>
+  <Blank UId="3479" />
+  <Token Text=":=" UId="3480" />
+  <Blank UId="3481" />
+  <Access Scope="LiteralConstant" UId="3482">
+    <Constant UId="3483">
+      <ConstantValue UId="3485">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="3486" />
+  <Blank UId="3487" />
+  <LineComment UId="3488">
+    <Text UId="3489"> Reset module error</Text>
+  </LineComment>
+  <NewLine UId="3490" />
+  <Blank Num="2" UId="3491" />
+  <Token Text="END_IF" UId="3492" />
+  <Token Text=";" UId="3493" />
+  <NewLine UId="3494" />
+  <Blank Num="2" UId="3495" />
+  <NewLine UId="3496" />
+  <Blank Num="2" UId="3497" />
+  <Token Text="IF" UId="3498" />
+  <Blank UId="3499" />
+  <Token Text="(" UId="3500" />
+  <Access Scope="LocalVariable" UId="3501">
+    <Symbol UId="3502">
+      <Component Name="diag" UId="3503" />
+      <Token Text="." UId="3504" />
+      <Component Name="input" UId="3505" />
+      <Token Text="." UId="3506" />
+      <Component Name="channel" UId="3507" />
+      <Token Text="." UId="3508" />
+      <Component Name="areaLenError" UId="3509" />
+    </Symbol>
+  </Access>
+  <Blank UId="3510" />
+  <Token Text="=" UId="3511" />
+  <Blank UId="3512" />
+  <Access Scope="LiteralConstant" UId="3513">
+    <Constant UId="3514">
+      <ConstantValue UId="3516">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="3517" />
+  <NewLine UId="3518" />
+  <Blank Num="4" UId="3519" />
+  <Token Text="OR" UId="3520" />
+  <Blank UId="3521" />
+  <Token Text="(" UId="3522" />
+  <Access Scope="LocalVariable" UId="3523">
+    <Symbol UId="3524">
+      <Component Name="diag" UId="3525" />
+      <Token Text="." UId="3526" />
+      <Component Name="output" UId="3527" />
+      <Token Text="." UId="3528" />
+      <Component Name="channel" UId="3529" />
+      <Token Text="." UId="3530" />
+      <Component Name="areaLenError" UId="3531" />
+    </Symbol>
+  </Access>
+  <Blank UId="3532" />
+  <Token Text="=" UId="3533" />
+  <Blank UId="3534" />
+  <Access Scope="LiteralConstant" UId="3535">
+    <Constant UId="3536">
+      <ConstantValue UId="3538">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="3539" />
+  <NewLine UId="3540" />
+  <Blank Num="4" UId="3541" />
+  <Token Text="OR" UId="3542" />
+  <Blank UId="3543" />
+  <Token Text="(" UId="3544" />
+  <Access Scope="LocalVariable" UId="3545">
+    <Symbol UId="3546">
+      <Component Name="diag" UId="3547" />
+      <Token Text="." UId="3548" />
+      <Component Name="inOut" UId="3549" />
+      <Token Text="." UId="3550" />
+      <Component Name="channel" UId="3551" />
+      <Token Text="." UId="3552" />
+      <Component Name="areaLenError" UId="3553" />
+    </Symbol>
+  </Access>
+  <Blank UId="3554" />
+  <Token Text="=" UId="3555" />
+  <Blank UId="3556" />
+  <Access Scope="LiteralConstant" UId="3557">
+    <Constant UId="3558">
+      <ConstantValue UId="3560">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="3561" />
+  <Blank UId="3562" />
+  <Token Text="THEN" UId="3563" />
+  <NewLine UId="3564" />
+  <Blank Num="4" UId="3565" />
+  <Access Scope="LocalVariable" UId="3566">
+    <Symbol UId="3567">
+      <Component Name="areaLenError" UId="3568" />
+    </Symbol>
+  </Access>
+  <Blank UId="3569" />
+  <Token Text=":=" UId="3570" />
+  <Blank UId="3571" />
+  <Access Scope="LiteralConstant" UId="3572">
+    <Constant UId="3573">
+      <ConstantValue UId="3575">TRUE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="3576" />
+  <Blank UId="3577" />
+  <LineComment UId="3578">
+    <Text UId="3579"> set area length error</Text>
+  </LineComment>
+  <NewLine UId="3580" />
+  <Blank Num="2" UId="3581" />
+  <Token Text="ELSIF" UId="3582" />
+  <Blank UId="3583" />
+  <Token Text="(" UId="3584" />
+  <Access Scope="LocalVariable" UId="3585">
+    <Symbol UId="3586">
+      <Component Name="diag" UId="3587" />
+      <Token Text="." UId="3588" />
+      <Component Name="input" UId="3589" />
+      <Token Text="." UId="3590" />
+      <Component Name="channel" UId="3591" />
+      <Token Text="." UId="3592" />
+      <Component Name="areaLenError" UId="3593" />
+    </Symbol>
+  </Access>
+  <Blank UId="3594" />
+  <Token Text="=" UId="3595" />
+  <Blank UId="3596" />
+  <Access Scope="LiteralConstant" UId="3597">
+    <Constant UId="3598">
+      <ConstantValue UId="3600">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="3601" />
+  <NewLine UId="3602" />
+  <Blank Num="4" UId="3603" />
+  <Token Text="AND" UId="3604" />
+  <Blank UId="3605" />
+  <Token Text="(" UId="3606" />
+  <Access Scope="LocalVariable" UId="3607">
+    <Symbol UId="3608">
+      <Component Name="diag" UId="3609" />
+      <Token Text="." UId="3610" />
+      <Component Name="output" UId="3611" />
+      <Token Text="." UId="3612" />
+      <Component Name="channel" UId="3613" />
+      <Token Text="." UId="3614" />
+      <Component Name="areaLenError" UId="3615" />
+    </Symbol>
+  </Access>
+  <Blank UId="3616" />
+  <Token Text="=" UId="3617" />
+  <Blank UId="3618" />
+  <Access Scope="LiteralConstant" UId="3619">
+    <Constant UId="3620">
+      <ConstantValue UId="3622">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="3623" />
+  <NewLine UId="3624" />
+  <Blank Num="4" UId="3625" />
+  <Token Text="AND" UId="3626" />
+  <Blank UId="3627" />
+  <Token Text="(" UId="3628" />
+  <Access Scope="LocalVariable" UId="3629">
+    <Symbol UId="3630">
+      <Component Name="diag" UId="3631" />
+      <Token Text="." UId="3632" />
+      <Component Name="inOut" UId="3633" />
+      <Token Text="." UId="3634" />
+      <Component Name="channel" UId="3635" />
+      <Token Text="." UId="3636" />
+      <Component Name="areaLenError" UId="3637" />
+    </Symbol>
+  </Access>
+  <Blank UId="3638" />
+  <Token Text="=" UId="3639" />
+  <Blank UId="3640" />
+  <Access Scope="LiteralConstant" UId="3641">
+    <Constant UId="3642">
+      <ConstantValue UId="3644">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=")" UId="3645" />
+  <Blank UId="3646" />
+  <Token Text="THEN" UId="3647" />
+  <NewLine UId="3648" />
+  <Blank Num="4" UId="3649" />
+  <Access Scope="LocalVariable" UId="3650">
+    <Symbol UId="3651">
+      <Component Name="areaLenError" UId="3652" />
+    </Symbol>
+  </Access>
+  <Blank UId="3653" />
+  <Token Text=":=" UId="3654" />
+  <Blank UId="3655" />
+  <Access Scope="LiteralConstant" UId="3656">
+    <Constant UId="3657">
+      <ConstantValue UId="3659">FALSE</ConstantValue>
+    </Constant>
+  </Access>
+  <Token Text=";" UId="3660" />
+  <Blank UId="3661" />
+  <LineComment UId="3662">
+    <Text UId="3663"> reset area length error</Text>
+  </LineComment>
+  <NewLine UId="3664" />
+  <Blank Num="2" UId="3665" />
+  <Token Text="END_IF" UId="3666" />
+  <Token Text=";" UId="3667" />
+  <NewLine UId="3668" />
+  <Blank Num="2" UId="3669" />
+  <NewLine UId="3670" />
+  <Token Text="END_IF" UId="3671" />
+  <Token Text=";" UId="3672" />
+  <NewLine Num="2" UId="3673" />
+</StructuredText></NetworkSource>
+          <ProgrammingLanguage>SCL</ProgrammingLanguage>
+        </AttributeList>
+        <ObjectList>
+          <MultilingualText ID="4" CompositionName="Comment">
+            <ObjectList>
+              <MultilingualTextItem ID="5" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text />
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+          <MultilingualText ID="6" CompositionName="Title">
+            <ObjectList>
+              <MultilingualTextItem ID="7" CompositionName="Items">
+                <AttributeList>
+                  <Culture>en-US</Culture>
+                  <Text />
+                </AttributeList>
+              </MultilingualTextItem>
+            </ObjectList>
+          </MultilingualText>
+        </ObjectList>
+      </SW.Blocks.CompileUnit>
+      <MultilingualText ID="8" CompositionName="Title">
+        <ObjectList>
+          <MultilingualTextItem ID="9" CompositionName="Items">
+            <AttributeList>
+              <Culture>en-US</Culture>
+              <Text />
+            </AttributeList>
+          </MultilingualTextItem>
+        </ObjectList>
+      </MultilingualText>
+    </ObjectList>
+  </SW.Blocks.FB>
+</Document>

@@ -1,0 +1,22 @@
+﻿MultiLingualTexts:
+  - id: MLC_553
+    en-US: Block type
+  - id: MLC_3Vt
+    en-US: Block length
+  - id: MLC_54m
+    en-US: Version
+  - id: MLC_4VA
+    en-US: ID for interrupt type
+  - id: MLC_4KU
+    en-US: API (Application Process Identifier)
+  - id: MLC_58f
+    en-US: Slot number of the component triggering the interrupt
+  - id: MLC_yq
+    en-US: Submodule slot number of the component triggering the interrupt
+  - id: MLC_53u
+    en-US: Module identification; specific information on the source of the interrupt
+  - id: MLC_3k8
+    en-US: Submodule identification; specific information on the source of the interrupt
+  - id: MLC_ca
+    en-US: Interrupt specifier
+  

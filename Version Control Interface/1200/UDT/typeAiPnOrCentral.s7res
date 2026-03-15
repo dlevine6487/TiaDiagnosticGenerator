@@ -1,0 +1,6 @@
+﻿MultiLingualTexts:
+  - id: MLC_3QJ
+    en-US: Header information
+  - id: MLC_3Kx
+    en-US: 'Additional interrupt information (Format identifier W#16#8000: Channel diagnostics)'
+  
