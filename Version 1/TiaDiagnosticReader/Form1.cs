@@ -390,13 +390,11 @@ namespace TiaDiagnosticGui
             obXml.AppendLine("      <SetENOAutomatically>false</SetENOAutomatically>");
             obXml.AppendLine("    </AttributeList>");
             obXml.AppendLine("    <ObjectList>");
-            obXml.AppendLine("      <SW.Blocks.CompileUnit ID=\"3\" CompositionName=\"CompileUnits\">");
-            obXml.AppendLine("        <AttributeList>");
-            obXml.AppendLine("          <NetworkSource><FlgNet xmlns=\"http://www.siemens.com/automation/Openness/SW/NetworkSource/FlgNet/v5\">");
-            obXml.AppendLine("  <Parts>");
 
-            idx = 1;
-            int uidBase = 20; // Ensure unique UIds per part
+            int idx = 1;
+            int compileUnitId = 3; // Global ID in the XML tree for CompileUnits
+            int multiTextId = 4;   // Global ID in the XML tree for MultilingualText
+            int uidBase = 20;      // Global UId for FlgNet elements across all networks
 
             foreach (var mod in diagnosticModules)
             {
@@ -404,6 +402,11 @@ namespace TiaDiagnosticGui
                 if (string.IsNullOrEmpty(safeName) || char.IsDigit(safeName[0])) safeName = "Mod" + safeName + "_" + idx;
 
                 string hwIdStr = string.IsNullOrEmpty(mod.HardwareIdentifier) ? "0" : mod.HardwareIdentifier;
+
+                obXml.AppendLine($"      <SW.Blocks.CompileUnit ID=\"{compileUnitId:X}\" CompositionName=\"CompileUnits\">");
+                obXml.AppendLine("        <AttributeList>");
+                obXml.AppendLine("          <NetworkSource><FlgNet xmlns=\"http://www.siemens.com/automation/Openness/SW/NetworkSource/FlgNet/v5\">");
+                obXml.AppendLine("  <Parts>");
 
                 // Hardware constant access
                 obXml.AppendLine($"    <Access Scope=\"GlobalConstant\" UId=\"{uidBase + 1}\">");
@@ -454,27 +457,9 @@ namespace TiaDiagnosticGui
                 obXml.AppendLine("      </CallInfo>");
                 obXml.AppendLine("    </Call>");
 
-                uidBase += 20;
-                idx++;
+                obXml.AppendLine("  </Parts>");
+                obXml.AppendLine("  <Wires>");
 
-                // Create instance DB (s7dcl) for each card
-                string instDb = $@"        {{
-           S7_Optimized := ""TRUE"";
-           S7_StandardRetain := ""FALSE"";
-           S7_Version := ""0.1""
-        }}
-    DATA_BLOCK Inst_{safeName} : ""1x00Diag82""
-    END_DATA_BLOCK";
-                File.WriteAllText(Path.Combine(outDir, $"Inst_{safeName}.s7dcl"), instDb);
-            }
-
-            obXml.AppendLine("  </Parts>");
-            obXml.AppendLine("  <Wires>");
-
-            idx = 1;
-            uidBase = 20;
-            foreach (var mod in diagnosticModules)
-            {
                 obXml.AppendLine($"    <Wire UId=\"{uidBase + 5}\">");
                 obXml.AppendLine($"      <OpenCon UId=\"{uidBase + 6}\" />");
                 obXml.AppendLine($"      <NameCon UId=\"{uidBase + 3}\" Name=\"en\" />");
@@ -484,7 +469,6 @@ namespace TiaDiagnosticGui
                 obXml.AppendLine($"      <NameCon UId=\"{uidBase + 3}\" Name=\"fId\" />");
                 obXml.AppendLine("    </Wire>");
 
-                string[] outVars = { "new", "status", "id", "len", "areaLenError" };
                 for (int i = 0; i < outVars.Length; i++)
                 {
                     obXml.AppendLine($"    <Wire UId=\"{uidBase + 20 + i}\">");
@@ -497,15 +481,54 @@ namespace TiaDiagnosticGui
                 obXml.AppendLine($"      <IdentCon UId=\"{uidBase + 2}\" />");
                 obXml.AppendLine($"      <NameCon UId=\"{uidBase + 3}\" Name=\"diag\" />");
                 obXml.AppendLine("    </Wire>");
-                uidBase += 20;
+
+                // Increment uidBase significantly to ensure no overlaps in next network
+                uidBase += 30 + outVars.Length * 2;
+
+                obXml.AppendLine("  </Wires>");
+                obXml.AppendLine("</FlgNet></NetworkSource>");
+                obXml.AppendLine("          <ProgrammingLanguage>FBD</ProgrammingLanguage>");
+                obXml.AppendLine("        </AttributeList>");
+                obXml.AppendLine("        <ObjectList>");
+                obXml.AppendLine($"          <MultilingualText ID=\"{multiTextId:X}\" CompositionName=\"Comment\">");
+                obXml.AppendLine("            <ObjectList>");
+                obXml.AppendLine($"              <MultilingualTextItem ID=\"{(multiTextId+1):X}\" CompositionName=\"Items\">");
+                obXml.AppendLine("                <AttributeList>");
+                obXml.AppendLine("                  <Culture>en-US</Culture>");
+                obXml.AppendLine($"                  <Text>Diagnostics for {safeName}</Text>");
+                obXml.AppendLine("                </AttributeList>");
+                obXml.AppendLine("              </MultilingualTextItem>");
+                obXml.AppendLine("            </ObjectList>");
+                obXml.AppendLine("          </MultilingualText>");
+                obXml.AppendLine($"          <MultilingualText ID=\"{(multiTextId+2):X}\" CompositionName=\"Title\">");
+                obXml.AppendLine("            <ObjectList>");
+                obXml.AppendLine($"              <MultilingualTextItem ID=\"{(multiTextId+3):X}\" CompositionName=\"Items\">");
+                obXml.AppendLine("                <AttributeList>");
+                obXml.AppendLine("                  <Culture>en-US</Culture>");
+                obXml.AppendLine($"                  <Text>Network {idx}: {mod.ModuleName}</Text>");
+                obXml.AppendLine("                </AttributeList>");
+                obXml.AppendLine("              </MultilingualTextItem>");
+                obXml.AppendLine("            </ObjectList>");
+                obXml.AppendLine("          </MultilingualText>");
+                obXml.AppendLine("        </ObjectList>");
+                obXml.AppendLine("      </SW.Blocks.CompileUnit>");
+
+                compileUnitId += 5; // Increment to prevent collisions in document
+                multiTextId += 5;
+
+                // Create instance DB (s7dcl) for each card
+                string instDb = $@"        {{
+           S7_Optimized := ""TRUE"";
+           S7_StandardRetain := ""FALSE"";
+           S7_Version := ""0.1""
+        }}
+    DATA_BLOCK Inst_{safeName} : ""1x00Diag82""
+    END_DATA_BLOCK";
+                File.WriteAllText(Path.Combine(outDir, $"Inst_{safeName}.s7dcl"), instDb);
+
                 idx++;
             }
 
-            obXml.AppendLine("  </Wires>");
-            obXml.AppendLine("</FlgNet></NetworkSource>");
-            obXml.AppendLine("          <ProgrammingLanguage>FBD</ProgrammingLanguage>");
-            obXml.AppendLine("        </AttributeList>");
-            obXml.AppendLine("      </SW.Blocks.CompileUnit>");
             obXml.AppendLine("    </ObjectList>");
             obXml.AppendLine("  </SW.Blocks.OB>");
             obXml.AppendLine("</Document>");
