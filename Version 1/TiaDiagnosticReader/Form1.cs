@@ -15,12 +15,15 @@ namespace TiaDiagnosticGui
         private Button btnDisconnect;
         private Button btnExportCsv;
         private Button btnGenerateScl;
+        private ComboBox cmbPlcSelect;
+        private Label lblPlcSelect;
         private RichTextBox txtOutput;
         private List<string> csvReportData;
         private List<DiagnosticModuleInfo> diagnosticModules;
 
         public class DiagnosticModuleInfo
         {
+            public string StationName { get; set; } = "";
             public string ModuleName { get; set; } = "";
             public string HardwareIdentifier { get; set; } = "";
             public int ChannelCount { get; set; } = 0;
@@ -54,9 +57,20 @@ namespace TiaDiagnosticGui
             btnExportCsv.Enabled = false;
             btnExportCsv.Click += BtnExportCsv_Click;
 
+            lblPlcSelect = new Label();
+            lblPlcSelect.Text = "Select PLC:";
+            lblPlcSelect.Location = new System.Drawing.Point(410, 13);
+            lblPlcSelect.Width = 70;
+
+            cmbPlcSelect = new ComboBox();
+            cmbPlcSelect.Location = new System.Drawing.Point(480, 10);
+            cmbPlcSelect.Width = 200;
+            cmbPlcSelect.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbPlcSelect.Enabled = false;
+
             btnGenerateScl = new Button();
             btnGenerateScl.Text = "Generate SCL";
-            btnGenerateScl.Location = new System.Drawing.Point(410, 10);
+            btnGenerateScl.Location = new System.Drawing.Point(690, 10);
             btnGenerateScl.Width = 120;
             btnGenerateScl.Enabled = false;
             btnGenerateScl.Click += BtnGenerateScl_Click;
@@ -73,6 +87,8 @@ namespace TiaDiagnosticGui
             this.Controls.Add(btnConnect);
             this.Controls.Add(btnDisconnect);
             this.Controls.Add(btnExportCsv);
+            this.Controls.Add(lblPlcSelect);
+            this.Controls.Add(cmbPlcSelect);
             this.Controls.Add(btnGenerateScl);
             this.Controls.Add(txtOutput);
         }
@@ -542,6 +558,7 @@ namespace TiaDiagnosticGui
             csvReportData.Clear();
             csvReportData.Add("Station,Item,Type,Location,Attribute,Value");
             diagnosticModules.Clear();
+            cmbPlcSelect.Items.Clear();
 
             btnConnect.Enabled = false;
             Log("Initializing TIA Portal connection on background thread...");
@@ -550,7 +567,20 @@ namespace TiaDiagnosticGui
 
             btnDisconnect.Enabled = (tiaPortal != null);
             btnExportCsv.Enabled = (csvReportData.Count > 1);
-            btnGenerateScl.Enabled = (diagnosticModules.Count > 0);
+
+            if (diagnosticModules.Count > 0)
+            {
+                HashSet<string> uniquePlcs = new HashSet<string>();
+                foreach (var m in diagnosticModules) uniquePlcs.Add(m.StationName);
+
+                foreach (var plc in uniquePlcs) cmbPlcSelect.Items.Add(plc);
+
+                if (cmbPlcSelect.Items.Count > 0) cmbPlcSelect.SelectedIndex = 0;
+
+                cmbPlcSelect.Enabled = true;
+                btnGenerateScl.Enabled = true;
+            }
+
             btnConnect.Enabled = (tiaPortal == null);
         }
 
