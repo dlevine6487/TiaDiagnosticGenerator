@@ -646,8 +646,9 @@ namespace TiaDiagnosticGui
             }
         }
 
-        private string GetPlcName(dynamic deviceItems, string defaultName)
+        private string GetPlcName(dynamic deviceItems, string defaultName, out bool foundRealPlc)
         {
+            foundRealPlc = false;
             if (deviceItems == null) return defaultName;
             foreach (dynamic item in deviceItems)
             {
@@ -692,6 +693,7 @@ namespace TiaDiagnosticGui
 
                     if (isPlc)
                     {
+                        foundRealPlc = true;
                         try { return item.Name.ToString(); } catch { }
                     }
 
@@ -699,8 +701,12 @@ namespace TiaDiagnosticGui
                     {
                         if (item.DeviceItems != null)
                         {
-                            string subResult = GetPlcName(item.DeviceItems, defaultName);
-                            if (subResult != defaultName) return subResult;
+                            string subResult = GetPlcName(item.DeviceItems, defaultName, out bool childFound);
+                            if (childFound)
+                            {
+                                foundRealPlc = true;
+                                return subResult;
+                            }
                         }
                     }
                     catch { }
@@ -716,7 +722,9 @@ namespace TiaDiagnosticGui
             try { deviceName = device.Name.ToString(); } catch { }
 
             // Try to find the actual PLC name within the station
-            string plcName = GetPlcName(device.DeviceItems, deviceName);
+            string plcName = GetPlcName(device.DeviceItems, deviceName, out bool isRealPlc);
+
+            if (!isRealPlc) return; // If this station isn't a PLC (e.g. it's just remote IO), don't map it as an owner.
 
             // Note: deviceName is the top level container, plcName is the specific CPU inside it.
             // When mapping IO systems, we want them mapped to the specific PLC name.
@@ -813,15 +821,27 @@ namespace TiaDiagnosticGui
             try { stationName = device.Name.ToString(); } catch { }
 
             // Try to find the actual PLC name within the station first
-            string plcName = GetPlcName(device.DeviceItems, stationName);
+            string plcName = GetPlcName(device.DeviceItems, stationName, out bool isRealPlc);
 
             // Override stationName if this device is part of a mapped IO System
             string controllingPlcName = ResolveControllingPlc(device.DeviceItems, plcName);
 
             // Important: we use the controllingPlcName (which defaults to the actual PLC name if not remote IO)
-            Log($"\n>>> STATION: {controllingPlcName}");
+            // However, we only log and walk it if it has a real controlling PLC (or is one)
+            if (!isRealPlc && controllingPlcName == plcName)
+            {
+                // It's a remote station but we didn't resolve an owner for it.
+                // It might not be assigned. We'll still walk it, but we might want to log it differently.
+                Log($"\n>>> UNASSIGNED STATION: {stationName}");
+            }
+            else
+            {
+                Log($"\n>>> STATION: {controllingPlcName}");
+            }
+
             RecursiveWalk(device.DeviceItems, controllingPlcName);
         }
+
 
         private string ResolveControllingPlc(dynamic items, string defaultName)
         {
