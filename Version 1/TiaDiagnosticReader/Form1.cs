@@ -266,6 +266,13 @@ namespace TiaDiagnosticGui
             fbScl.AppendLine("   VAR_INPUT");
             fbScl.AppendLine("      F_ID : HW_IO;");
             fbScl.AppendLine("   END_VAR");
+            fbScl.AppendLine("   VAR_OUTPUT");
+            fbScl.AppendLine("      new : Bool;");
+            fbScl.AppendLine("      status : DWord;");
+            fbScl.AppendLine("      id : HW_IO;");
+            fbScl.AppendLine("      len : UInt;");
+            fbScl.AppendLine("      areaLenError : Bool;");
+            fbScl.AppendLine("   END_VAR");
             fbScl.AppendLine("   VAR_IN_OUT");
             fbScl.AppendLine("      Diag : \"typeDiag\";");
             fbScl.AppendLine("   END_VAR");
@@ -279,10 +286,14 @@ namespace TiaDiagnosticGui
             fbScl.AppendLine("BEGIN");
             fbScl.AppendLine("   #ralrm(MODE := 2,");
             fbScl.AppendLine("          F_ID := #F_ID,");
+            fbScl.AppendLine("          NEW => #new,");
+            fbScl.AppendLine("          STATUS => #status,");
+            fbScl.AppendLine("          ID => #id,");
+            fbScl.AppendLine("          LEN => #len,");
             fbScl.AppendLine("          TINFO := #tinfo,");
             fbScl.AppendLine("          AINFO := #ainfo);");
             fbScl.AppendLine("");
-            fbScl.AppendLine("   IF #ralrm.NEW THEN");
+            fbScl.AppendLine("   IF #new THEN");
             fbScl.AppendLine("      #channelNumber := UINT_TO_INT(#ainfo.USI); // Channel number from User Structure Identifier");
             fbScl.AppendLine("      #channelError := (#tinfo.OB_NUM = 82) AND (#tinfo.PRG_INFO = 16#39); // Event incoming");
             fbScl.AppendLine("");
@@ -319,6 +330,12 @@ namespace TiaDiagnosticGui
             tagsS7dcl.AppendLine("    DATA_BLOCK Tags");
             tagsS7dcl.AppendLine("        VAR");
 
+            // Generate array for output statuses
+            if (diagnosticModules.Count > 0)
+            {
+                tagsS7dcl.AppendLine($"            diag82 : Array[1..{diagnosticModules.Count}] of \"typeDiag82\";");
+            }
+
             int idx = 1;
             foreach (var mod in diagnosticModules)
             {
@@ -334,6 +351,18 @@ namespace TiaDiagnosticGui
             tagsS7dcl.AppendLine("        END_VAR");
             tagsS7dcl.AppendLine("    END_DATA_BLOCK");
             File.WriteAllText(Path.Combine(outDir, "Tags.s7dcl"), tagsS7dcl.ToString());
+
+            // Add typeDiag82 struct to match the example outputs
+            string tDiag82S7dcl = @"    TYPE
+        typeDiag82 : STRUCT
+        new : Bool;
+        status : DWord;
+        id : HW_IO;
+        len : UInt;
+        areaLenError : Bool;
+        END_STRUCT;
+    END_TYPE";
+            File.WriteAllText(Path.Combine(udtDir, "typeDiag82.s7dcl"), tDiag82S7dcl);
 
             // 8. OB82 (DiagnosticErrorInterrupt) in XML format (FBD representation)
             System.Text.StringBuilder obXml = new System.Text.StringBuilder();
@@ -389,6 +418,26 @@ namespace TiaDiagnosticGui
                 obXml.AppendLine("      </Symbol>");
                 obXml.AppendLine("    </Access>");
 
+                // diag82 variables access
+                string[] outVars = { "new", "status", "id", "len", "areaLenError" };
+                for (int i = 0; i < outVars.Length; i++)
+                {
+                    obXml.AppendLine($"    <Access Scope=\"GlobalVariable\" UId=\"{uidBase + 10 + i}\">");
+                    obXml.AppendLine("      <Symbol>");
+                    obXml.AppendLine("        <Component Name=\"Tags\" />");
+                    obXml.AppendLine("        <Component Name=\"diag82\" AccessModifier=\"Array\">");
+                    obXml.AppendLine("          <Access Scope=\"LiteralConstant\">");
+                    obXml.AppendLine("            <Constant>");
+                    obXml.AppendLine("              <ConstantType>DInt</ConstantType>");
+                    obXml.AppendLine($"              <ConstantValue>{idx}</ConstantValue>");
+                    obXml.AppendLine("            </Constant>");
+                    obXml.AppendLine("          </Access>");
+                    obXml.AppendLine("        </Component>");
+                    obXml.AppendLine($"        <Component Name=\"{outVars[i]}\" />");
+                    obXml.AppendLine("      </Symbol>");
+                    obXml.AppendLine("    </Access>");
+                }
+
                 // FB Call
                 obXml.AppendLine($"    <Call UId=\"{uidBase + 3}\">");
                 obXml.AppendLine("      <CallInfo Name=\"1x00Diag82\" BlockType=\"FB\">");
@@ -396,11 +445,16 @@ namespace TiaDiagnosticGui
                 obXml.AppendLine($"          <Component Name=\"Inst_{safeName}\" />");
                 obXml.AppendLine("        </Instance>");
                 obXml.AppendLine("        <Parameter Name=\"fId\" Section=\"Input\" Type=\"HW_IO\" />");
+                obXml.AppendLine("        <Parameter Name=\"new\" Section=\"Output\" Type=\"Bool\" />");
+                obXml.AppendLine("        <Parameter Name=\"status\" Section=\"Output\" Type=\"DWord\" />");
+                obXml.AppendLine("        <Parameter Name=\"id\" Section=\"Output\" Type=\"HW_IO\" />");
+                obXml.AppendLine("        <Parameter Name=\"len\" Section=\"Output\" Type=\"UInt\" />");
+                obXml.AppendLine("        <Parameter Name=\"areaLenError\" Section=\"Output\" Type=\"Bool\" />");
                 obXml.AppendLine("        <Parameter Name=\"diag\" Section=\"InOut\" Type=\"&quot;typeDiag&quot;\" />");
                 obXml.AppendLine("      </CallInfo>");
                 obXml.AppendLine("    </Call>");
 
-                uidBase += 10;
+                uidBase += 20;
                 idx++;
 
                 // Create instance DB (s7dcl) for each card
@@ -429,11 +483,21 @@ namespace TiaDiagnosticGui
                 obXml.AppendLine($"      <IdentCon UId=\"{uidBase + 1}\" />");
                 obXml.AppendLine($"      <NameCon UId=\"{uidBase + 3}\" Name=\"fId\" />");
                 obXml.AppendLine("    </Wire>");
+
+                string[] outVars = { "new", "status", "id", "len", "areaLenError" };
+                for (int i = 0; i < outVars.Length; i++)
+                {
+                    obXml.AppendLine($"    <Wire UId=\"{uidBase + 20 + i}\">");
+                    obXml.AppendLine($"      <NameCon UId=\"{uidBase + 3}\" Name=\"{outVars[i]}\" />");
+                    obXml.AppendLine($"      <IdentCon UId=\"{uidBase + 10 + i}\" />");
+                    obXml.AppendLine("    </Wire>");
+                }
+
                 obXml.AppendLine($"    <Wire UId=\"{uidBase + 8}\">");
                 obXml.AppendLine($"      <IdentCon UId=\"{uidBase + 2}\" />");
                 obXml.AppendLine($"      <NameCon UId=\"{uidBase + 3}\" Name=\"diag\" />");
                 obXml.AppendLine("    </Wire>");
-                uidBase += 10;
+                uidBase += 20;
                 idx++;
             }
 
