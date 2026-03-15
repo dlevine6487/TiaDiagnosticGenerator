@@ -645,11 +645,53 @@ namespace TiaDiagnosticGui
             }
         }
 
+        private string GetPlcName(dynamic deviceItems, string defaultName)
+        {
+            if (deviceItems == null) return defaultName;
+            foreach (dynamic item in deviceItems)
+            {
+                if (item != null)
+                {
+                    try
+                    {
+                        var classification = item.Classification.ToString().ToLower();
+                        if (classification.Contains("cpu"))
+                        {
+                            return item.Name.ToString();
+                        }
+                    }
+                    catch { }
+
+                    try
+                    {
+                        // Check if it has a software container
+                        var swContainer = item.GetService("Siemens.Engineering.SW.SoftwareContainer");
+                        if (swContainer != null)
+                        {
+                            return item.Name.ToString();
+                        }
+                    }
+                    catch { }
+
+                    if (item.DeviceItems != null)
+                    {
+                        string subResult = GetPlcName(item.DeviceItems, defaultName);
+                        if (subResult != defaultName) return subResult;
+                    }
+                }
+            }
+            return defaultName;
+        }
+
         private void BuildIoSystemMap(dynamic device)
         {
             if (device == null) return;
             string deviceName = "Unknown";
             try { deviceName = device.Name.ToString(); } catch { }
+
+            // Try to find the actual PLC name within the station
+            deviceName = GetPlcName(device.DeviceItems, deviceName);
+
             MapIoSystemsRecursive(device.DeviceItems, deviceName);
         }
 
@@ -742,8 +784,11 @@ namespace TiaDiagnosticGui
             string stationName = "Unknown";
             try { stationName = device.Name.ToString(); } catch { }
 
+            // Try to find the actual PLC name within the station first
+            string plcName = GetPlcName(device.DeviceItems, stationName);
+
             // Override stationName if this device is part of a mapped IO System
-            stationName = ResolveControllingPlc(device.DeviceItems, stationName);
+            stationName = ResolveControllingPlc(device.DeviceItems, plcName);
 
             Log($"\n>>> STATION: {stationName}");
             RecursiveWalk(device.DeviceItems, stationName);
