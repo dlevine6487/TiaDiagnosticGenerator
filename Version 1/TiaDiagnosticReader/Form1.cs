@@ -101,19 +101,21 @@ namespace TiaDiagnosticGui
                 return;
             }
 
+            string selectedStation = cmbPlcSelect.SelectedItem?.ToString() ?? "";
+
             using (FolderBrowserDialog fbd = new FolderBrowserDialog())
             {
                 fbd.Description = "Select a folder to save the generated S7DCL/S7res files";
                 if (fbd.ShowDialog() == DialogResult.OK)
                 {
                     btnGenerateScl.Enabled = false;
-                    Log("Generating SCL/S7DCL files...");
+                    Log($"Generating SCL/S7DCL files for station: {selectedStation}...");
 
                     await Task.Run(() =>
                     {
                         try
                         {
-                            GenerateAndSaveVciFiles(fbd.SelectedPath);
+                            GenerateAndSaveVciFiles(fbd.SelectedPath, selectedStation);
                             Log($"\n[SCL GENERATION] Successfully saved VCI files to {fbd.SelectedPath}");
                         }
                         catch (Exception ex)
@@ -127,14 +129,30 @@ namespace TiaDiagnosticGui
             }
         }
 
-        private void GenerateAndSaveVciFiles(string outDir)
+        private void GenerateAndSaveVciFiles(string outDir, string selectedStation)
         {
             string udtDir = Path.Combine(outDir, "UDT");
             Directory.CreateDirectory(udtDir);
 
+            // Filter modules for the selected station
+            var stationModules = new List<DiagnosticModuleInfo>();
+            foreach (var mod in diagnosticModules)
+            {
+                if (string.IsNullOrEmpty(selectedStation) || mod.StationName == selectedStation)
+                {
+                    stationModules.Add(mod);
+                }
+            }
+
+            if (stationModules.Count == 0)
+            {
+                Log($"No diagnostic modules found for station {selectedStation}.");
+                return;
+            }
+
             // Find max channel count
             int maxChannelsAll = 1;
-            foreach (var mod in diagnosticModules)
+            foreach (var mod in stationModules)
             {
                 if (mod.ChannelCount > maxChannelsAll) maxChannelsAll = mod.ChannelCount;
             }
@@ -347,13 +365,13 @@ namespace TiaDiagnosticGui
             tagsS7dcl.AppendLine("        VAR");
 
             // Generate array for output statuses
-            if (diagnosticModules.Count > 0)
+            if (stationModules.Count > 0)
             {
-                tagsS7dcl.AppendLine($"            diag82 : Array[1..{diagnosticModules.Count}] of \"typeDiag82\";");
+                tagsS7dcl.AppendLine($"            diag82 : Array[1..{stationModules.Count}] of \"typeDiag82\";");
             }
 
             int idx = 1;
-            foreach (var mod in diagnosticModules)
+            foreach (var mod in stationModules)
             {
                 // Generate safe names without spaces or invalid chars
                 string safeName = System.Text.RegularExpressions.Regex.Replace(mod.ModuleName, @"[^a-zA-Z0-9_]", "");
@@ -412,22 +430,22 @@ namespace TiaDiagnosticGui
             int multiTextId = 4;   // Global ID in the XML tree for MultilingualText
             int uidBase = 20;      // Global UId for FlgNet elements across all networks
 
-            foreach (var mod in diagnosticModules)
+            foreach (var mod in stationModules)
             {
                 string safeName = System.Text.RegularExpressions.Regex.Replace(mod.ModuleName, @"[^a-zA-Z0-9_]", "");
                 if (string.IsNullOrEmpty(safeName) || char.IsDigit(safeName[0])) safeName = "Mod" + safeName + "_" + idx;
-
-                // Map to the TIA Portal generated system constant name (e.g. "AI 5/AQ 2_1" -> "Local~AI_5_AQ_2_1")
-                string sysConstName = "Local~" + mod.ModuleName.Replace(" ", "_").Replace("/", "_").Replace("-", "_");
 
                 obXml.AppendLine($"      <SW.Blocks.CompileUnit ID=\"{compileUnitId:X}\" CompositionName=\"CompileUnits\">");
                 obXml.AppendLine("        <AttributeList>");
                 obXml.AppendLine("          <NetworkSource><FlgNet xmlns=\"http://www.siemens.com/automation/Openness/SW/NetworkSource/FlgNet/v5\">");
                 obXml.AppendLine("  <Parts>");
 
-                // Hardware constant access (HW_Submodule system constant string)
-                obXml.AppendLine($"    <Access Scope=\"GlobalConstant\" UId=\"{uidBase + 1}\">");
-                obXml.AppendLine($"      <Constant Name=\"{sysConstName}\" />");
+                // Hardware constant access using the literal integer value cached from the audit
+                obXml.AppendLine($"    <Access Scope=\"LiteralConstant\" UId=\"{uidBase + 1}\">");
+                obXml.AppendLine($"      <Constant>");
+                obXml.AppendLine($"        <ConstantType>HW_IO</ConstantType>");
+                obXml.AppendLine($"        <ConstantValue>{mod.HardwareIdentifier}</ConstantValue>");
+                obXml.AppendLine($"      </Constant>");
                 obXml.AppendLine("    </Access>");
 
                 // Diag struct access
@@ -867,6 +885,7 @@ namespace TiaDiagnosticGui
                     {
                         diagnosticModules.Add(new DiagnosticModuleInfo
                         {
+                            StationName = stationName,
                             ModuleName = itemName,
                             HardwareIdentifier = hwId,
                             ChannelCount = maxChannelCount,
