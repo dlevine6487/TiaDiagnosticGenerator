@@ -719,20 +719,31 @@ namespace TiaDiagnosticGui
 
                 Log($"Connected to: {project.Name}");
 
-                Log("\n--- PASS 1: Mapping IO Systems to PLCs ---");
-                foreach (dynamic device in project.Devices) BuildIoSystemMap(device);
-                BuildIoSystemMapForGroups(project.DeviceGroups);
+                Log("\n--- PASS 1: Discovering PLCs and probing local IO ---");
+                var plcs = new List<dynamic>();
+
+                // Find all PLCs
+                FindPlcs(project.Devices, plcs);
+                FindPlcsInGroups(project.DeviceGroups, plcs);
                 if (project.UngroupedDevicesGroup != null)
                 {
-                    foreach (dynamic device in project.UngroupedDevicesGroup.Devices) BuildIoSystemMap(device);
+                    FindPlcs(project.UngroupedDevicesGroup.Devices, plcs);
                 }
 
-                Log("\n--- PASS 2: Hardware Audit ---");
-                foreach (dynamic device in project.Devices) WalkDevice(device);
-                ScanGroupsRecursive(project.DeviceGroups);
-                if (project.UngroupedDevicesGroup != null)
+                // Probe local IO for each PLC
+                foreach (dynamic plc in plcs)
                 {
-                    foreach (dynamic device in project.UngroupedDevicesGroup.Devices) WalkDevice(device);
+                    string plcName = GetPlcName(plc.DeviceItems, plc.Name.ToString(), out bool isPlc);
+                    Log($"\n>>> LOCAL STATION: {plcName}");
+                    RecursiveWalk(plc.DeviceItems, plcName);
+                }
+
+                Log("\n--- PASS 2: Discovering and probing Distributed IO ---");
+                // For each PLC, find its IO Systems and probe their devices
+                foreach (dynamic plc in plcs)
+                {
+                    string plcName = GetPlcName(plc.DeviceItems, plc.Name.ToString(), out bool isPlc);
+                    WalkProfinetNetworks(plc.DeviceItems, plcName);
                 }
 
                 Log("\n[SCAN] Completed successfully.");
@@ -740,6 +751,113 @@ namespace TiaDiagnosticGui
             catch (Exception ex)
             {
                 Log($"Critical Error: {ex.Message}");
+            }
+        }
+
+        private void FindPlcs(dynamic devices, List<dynamic> plcs)
+        {
+            if (devices == null) return;
+            foreach (dynamic device in devices)
+            {
+                GetPlcName(device.DeviceItems, device.Name.ToString(), out bool isPlc);
+                if (isPlc)
+                {
+                    plcs.Add(device);
+                }
+            }
+        }
+
+        private void FindPlcsInGroups(dynamic groups, List<dynamic> plcs)
+        {
+            if (groups == null) return;
+            foreach (dynamic group in groups)
+            {
+                FindPlcs(group.Devices, plcs);
+                if (group.Groups != null) FindPlcsInGroups(group.Groups, plcs);
+            }
+        }
+
+        private void WalkProfinetNetworks(dynamic items, string controllingPlcName)
+        {
+            if (items == null) return;
+            foreach (dynamic item in items)
+            {
+                if (item != null)
+                {
+                    try
+                    {
+                        var networkInterface = item.GetService("Siemens.Engineering.HW.Features.NetworkInterface");
+                        if (networkInterface != null)
+                        {
+                            var ioControllers = networkInterface.IoControllers;
+                            if (ioControllers != null)
+                            {
+                                foreach (var controller in ioControllers)
+                                {
+                                    var ioSystem = controller.IoSystem;
+                                    if (ioSystem != null)
+                                    {
+                                        string ioSystemName = ioSystem.Name.ToString();
+                                        Log($"\n>>> IO SYSTEM: {ioSystemName} (Owner: {controllingPlcName})");
+
+                                        // Walk the devices on this IO System
+                                        foreach (var station in ioSystem.IoSystemStations)
+                                        {
+                                            string stationName = "Unknown";
+                                            try { stationName = station.Name.ToString(); } catch { }
+
+                                            // Ensure this isn't another PLC we already processed
+                                            GetPlcName(station.DeviceItems, stationName, out bool isPlc);
+                                            if (!isPlc)
+                                            {
+                                                Log($"  >>> REMOTE STATION: {stationName}");
+                                                RecursiveWalk(station.DeviceItems, controllingPlcName);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Handle Profibus DP Masters
+                            try
+                            {
+                                var dpMasters = networkInterface.DpMasters;
+                                if (dpMasters != null)
+                                {
+                                    foreach (var master in dpMasters)
+                                    {
+                                        var dpSystem = master.DpSystem;
+                                        if (dpSystem != null)
+                                        {
+                                            string dpSystemName = dpSystem.Name.ToString();
+                                            Log($"\n>>> DP SYSTEM: {dpSystemName} (Owner: {controllingPlcName})");
+
+                                            foreach (var station in dpSystem.DpSystemStations)
+                                            {
+                                                string stationName = "Unknown";
+                                                try { stationName = station.Name.ToString(); } catch { }
+
+                                                GetPlcName(station.DeviceItems, stationName, out bool isPlc);
+                                                if (!isPlc)
+                                                {
+                                                    Log($"  >>> REMOTE STATION: {stationName}");
+                                                    RecursiveWalk(station.DeviceItems, controllingPlcName);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
+
+                    if (item.DeviceItems != null)
+                    {
+                        WalkProfinetNetworks(item.DeviceItems, controllingPlcName);
+                    }
+                }
             }
         }
 
