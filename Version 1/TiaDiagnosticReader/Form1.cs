@@ -27,6 +27,7 @@ namespace TiaDiagnosticGui
             public string StationName { get; set; } = "";
             public string ModuleName { get; set; } = "";
             public string HardwareIdentifier { get; set; } = "";
+            public string HardwareConstantName { get; set; } = "";
             public int ChannelCount { get; set; } = 0;
             public bool IsHighFeature { get; set; } = false;
         }
@@ -445,13 +446,22 @@ namespace TiaDiagnosticGui
                 obXml.AppendLine("          <NetworkSource><FlgNet xmlns=\"http://www.siemens.com/automation/Openness/SW/NetworkSource/FlgNet/v5\">");
                 obXml.AppendLine("  <Parts>");
 
-                // Hardware constant access using the literal integer value cached from the audit
-                obXml.AppendLine($"    <Access Scope=\"LiteralConstant\" UId=\"{uidBase + 1}\">");
-                obXml.AppendLine($"      <Constant>");
-                obXml.AppendLine($"        <ConstantType>HW_IO</ConstantType>");
-                obXml.AppendLine($"        <ConstantValue>{mod.HardwareIdentifier}</ConstantValue>");
-                obXml.AppendLine($"      </Constant>");
-                obXml.AppendLine("    </Access>");
+                // Hardware constant access using the system constant name if available, otherwise fallback to literal
+                if (!string.IsNullOrEmpty(mod.HardwareConstantName))
+                {
+                    obXml.AppendLine($"    <Access Scope=\"GlobalConstant\" UId=\"{uidBase + 1}\">");
+                    obXml.AppendLine("      <Constant Name=\"" + mod.HardwareConstantName + "\" />");
+                    obXml.AppendLine("    </Access>");
+                }
+                else
+                {
+                    obXml.AppendLine($"    <Access Scope=\"LiteralConstant\" UId=\"{uidBase + 1}\">");
+                    obXml.AppendLine($"      <Constant>");
+                    obXml.AppendLine($"        <ConstantType>HW_IO</ConstantType>");
+                    obXml.AppendLine($"        <ConstantValue>{mod.HardwareIdentifier}</ConstantValue>");
+                    obXml.AppendLine($"      </Constant>");
+                    obXml.AppendLine("    </Access>");
+                }
 
                 // Diag struct access
                 obXml.AppendLine($"    <Access Scope=\"GlobalVariable\" UId=\"{uidBase + 2}\">");
@@ -1018,6 +1028,7 @@ namespace TiaDiagnosticGui
             string itemName = "Unknown";
             string typeId = "Unknown";
             string hwId = "0";
+            string hwConstName = "";
 
             try { itemName = item.Name.ToString(); } catch { }
             try { typeId = item.TypeIdentifier.ToString(); } catch { }
@@ -1064,6 +1075,7 @@ namespace TiaDiagnosticGui
                                 if (constType.Equals("HW_SubModule", StringComparison.OrdinalIgnoreCase))
                                 {
                                     hwId = constant.Value.ToString();
+                                    hwConstName = constant.Name.ToString();
                                     foundSubMod = true;
                                     break; // Take the first HW_SubModule we find
                                 }
@@ -1256,10 +1268,12 @@ namespace TiaDiagnosticGui
                             StationName = stationName,
                             ModuleName = itemName,
                             HardwareIdentifier = hwId,
+                            HardwareConstantName = hwConstName,
                             ChannelCount = maxChannelCount,
                             IsHighFeature = isHighFeature
                         });
-                        Log($"[CACHE] Cached module '{itemName}' (HW_IO: {hwId}, Channels: {maxChannelCount}, HF: {isHighFeature}) for SCL generation.");
+                        string logHwStr = string.IsNullOrEmpty(hwConstName) ? hwId : $"{hwConstName} ({hwId})";
+                        Log($"[CACHE] Cached module '{itemName}' (HW_IO: {logHwStr}, Channels: {maxChannelCount}, HF: {isHighFeature}) for SCL generation.");
                     }
                 }
             }
