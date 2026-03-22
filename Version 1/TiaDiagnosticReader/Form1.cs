@@ -1144,7 +1144,7 @@ namespace TiaDiagnosticGui
                         }
                     }
 
-                    // Prioritize HW_SubModule system constant if available
+                    // Prioritize HW_SubModule or HW_Device system constant if available
                     try
                     {
                         var systemConstants = item.GetService("Siemens.Engineering.HW.Features.SystemConstantsProvider");
@@ -1153,12 +1153,18 @@ namespace TiaDiagnosticGui
                             foreach (var constant in systemConstants.SystemConstants)
                             {
                                 string constType = constant.DataType.ToString();
-                                if (constType.Equals("HW_SubModule", StringComparison.OrdinalIgnoreCase))
+                                // For ET200SP stations, they might use HW_Device or HW_SubModule. We will take any HW_... constant if we don't have one, but prefer HW_SubModule
+                                if (constType.Equals("HW_SubModule", StringComparison.OrdinalIgnoreCase) ||
+                                    constType.Equals("HW_Device", StringComparison.OrdinalIgnoreCase) ||
+                                    constType.StartsWith("HW_"))
                                 {
                                     hwId = constant.Value.ToString();
                                     hwConstName = constant.Name.ToString();
                                     foundSubMod = true;
-                                    break; // Take the first HW_SubModule we find
+                                    if (constType.Equals("HW_SubModule", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        break; // Best match found
+                                    }
                                 }
                             }
                         }
