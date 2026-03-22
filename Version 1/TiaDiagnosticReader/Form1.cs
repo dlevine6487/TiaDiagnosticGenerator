@@ -1104,6 +1104,102 @@ namespace TiaDiagnosticGui
             }
         }
 
+        private void ExtractHardwareIdentifier(dynamic item, ref string hwId, ref string hwConstName)
+        {
+            if (item == null) return;
+
+            // Strategy 1: Look directly for the HwIdentifiers node in the object
+            try
+            {
+                dynamic identifiers = item.HwIdentifiers;
+                if (identifiers != null)
+                {
+                    foreach (dynamic id in identifiers)
+                    {
+                        if (id != null)
+                        {
+                            try { hwId = id.GetAttribute("Identifier").ToString(); } catch { }
+                            // Try to get a valid name, but we might just have the raw ID here
+                            try
+                            {
+                                string name = id.Name.ToString();
+                                if (!string.IsNullOrEmpty(name) && name != "HwIdentifier")
+                                {
+                                    hwConstName = name;
+                                }
+                            }
+                            catch { }
+
+                            // If we successfully pulled an identifier from a dedicated node, return.
+                            if (hwId != "0" && !string.IsNullOrEmpty(hwId)) return;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            // Strategy 2: Get via the SystemConstantsProvider service
+            try
+            {
+                var systemConstants = item.GetService("Siemens.Engineering.HW.Features.SystemConstantsProvider");
+                if (systemConstants != null)
+                {
+                    foreach (var constant in systemConstants.SystemConstants)
+                    {
+                        string constType = constant.DataType.ToString();
+                        // For ET200SP stations, they might use HW_Device or HW_SubModule. We will take any HW_... constant if we don't have one, but prefer HW_SubModule
+                        if (constType.Equals("HW_SubModule", StringComparison.OrdinalIgnoreCase) ||
+                            constType.Equals("HW_Device", StringComparison.OrdinalIgnoreCase) ||
+                            constType.StartsWith("HW_"))
+                        {
+                            hwId = constant.Value.ToString();
+                            hwConstName = constant.Name.ToString();
+
+                            if (constType.Equals("HW_SubModule", StringComparison.OrdinalIgnoreCase))
+                            {
+                                return; // Best match found
+                            }
+                        }
+                    }
+                    if (hwId != "0" && !string.IsNullOrEmpty(hwId)) return; // Found a good fallback constant
+                }
+            }
+            catch { }
+
+            // Strategy 3: Directly read the "HardwareIdentifier" attribute
+            try
+            {
+                var attrs = item.GetAttributeInfos();
+                if (attrs != null)
+                {
+                    foreach (var attr in attrs)
+                    {
+                        if (attr.Name.ToString().Equals("HardwareIdentifier", StringComparison.OrdinalIgnoreCase))
+                        {
+                            hwId = item.GetAttribute("HardwareIdentifier").ToString();
+                            if (hwId != "0" && !string.IsNullOrEmpty(hwId)) return;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            // Strategy 4: Recurse into sub-device items (e.g., to find the actual sub-module holding the ID)
+            try
+            {
+                dynamic subItems = item.DeviceItems;
+                if (subItems != null)
+                {
+                    foreach (dynamic subItem in subItems)
+                    {
+                        ExtractHardwareIdentifier(subItem, ref hwId, ref hwConstName);
+                        if (hwId != "0" && !string.IsNullOrEmpty(hwId)) return;
+                    }
+                }
+            }
+            catch { }
+        }
+
         private void ProbeAllDiagnostics(dynamic item, string stationName)
         {
             string itemName = "Unknown";
@@ -1126,53 +1222,8 @@ namespace TiaDiagnosticGui
                 return; // Exclude
             }
 
-            // Attempt to get HW_IO identifier
-            try
-            {
-                dynamic attrs = item.GetAttributeInfos();
-                if (attrs != null)
-                {
-                    bool foundSubMod = false;
-                    foreach (var attr in attrs)
-                    {
-                        if (attr.Name.ToString().Equals("HardwareIdentifier", StringComparison.OrdinalIgnoreCase))
-                        {
-                            if (!foundSubMod)
-                            {
-                                hwId = item.GetAttribute("HardwareIdentifier").ToString();
-                            }
-                        }
-                    }
-
-                    // Prioritize HW_SubModule or HW_Device system constant if available
-                    try
-                    {
-                        var systemConstants = item.GetService("Siemens.Engineering.HW.Features.SystemConstantsProvider");
-                        if (systemConstants != null)
-                        {
-                            foreach (var constant in systemConstants.SystemConstants)
-                            {
-                                string constType = constant.DataType.ToString();
-                                // For ET200SP stations, they might use HW_Device or HW_SubModule. We will take any HW_... constant if we don't have one, but prefer HW_SubModule
-                                if (constType.Equals("HW_SubModule", StringComparison.OrdinalIgnoreCase) ||
-                                    constType.Equals("HW_Device", StringComparison.OrdinalIgnoreCase) ||
-                                    constType.StartsWith("HW_"))
-                                {
-                                    hwId = constant.Value.ToString();
-                                    hwConstName = constant.Name.ToString();
-                                    foundSubMod = true;
-                                    if (constType.Equals("HW_SubModule", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        break; // Best match found
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    catch { }
-                }
-            }
-            catch { }
+            // Extract the hardware identifier natively using recursive deep search
+            ExtractHardwareIdentifier(item, ref hwId, ref hwConstName);
 
             // Keywords we are looking for in the attribute names
             string[] keywords = { "diag", "valuestatus", "wirebreak", "shortcircuit", "overflow", "underflow", "nosupplyvoltage" };
