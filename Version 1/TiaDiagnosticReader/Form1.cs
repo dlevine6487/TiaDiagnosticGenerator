@@ -928,7 +928,7 @@ namespace TiaDiagnosticGui
                 {
                     try
                     {
-                        var networkInterface = item.GetService("Siemens.Engineering.HW.Features.NetworkInterface");
+                        var networkInterface = item.GetService("Siemens.Engineering.Hw.Features.NetworkInterface");
                         if (networkInterface != null)
                         {
                             var ioControllers = networkInterface.IoControllers;
@@ -1031,7 +1031,7 @@ namespace TiaDiagnosticGui
                 {
                     try
                     {
-                        var networkInterface = item.GetService("Siemens.Engineering.HW.Features.NetworkInterface");
+                        var networkInterface = item.GetService("Siemens.Engineering.Hw.Features.NetworkInterface");
                         if (networkInterface != null)
                         {
                             var ioConnectors = networkInterface.IoConnectors;
@@ -1141,7 +1141,7 @@ namespace TiaDiagnosticGui
             // Strategy 2: Get via the SystemConstantsProvider service
             try
             {
-                var systemConstants = item.GetService("Siemens.Engineering.HW.Features.SystemConstantsProvider");
+                var systemConstants = item.GetService("Siemens.Engineering.Hw.Features.SystemConstantsProvider");
                 if (systemConstants != null)
                 {
                     foreach (var constant in systemConstants.SystemConstants)
