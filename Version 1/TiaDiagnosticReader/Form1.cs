@@ -730,6 +730,13 @@ namespace TiaDiagnosticGui
                     FindPlcs(project.UngroupedDevicesGroup.Devices, plcs);
                 }
 
+                // First, iterate all PLCs to map their IO systems to themselves
+                foreach (dynamic plc in plcs)
+                {
+                    string plcName = GetPlcName(plc.DeviceItems, plc.Name.ToString(), out bool isPlc);
+                    MapIoSystemsRecursive(plc.DeviceItems, plcName);
+                }
+
                 // Probe local IO for each PLC
                 foreach (dynamic plc in plcs)
                 {
@@ -739,11 +746,14 @@ namespace TiaDiagnosticGui
                 }
 
                 Log("\n--- PASS 2: Discovering and probing Distributed IO ---");
-                // For each PLC, find its IO Systems and probe their devices
-                foreach (dynamic plc in plcs)
+
+                // Now iterate all devices again, but ONLY look at remote stations.
+                // We do this by scanning all devices globally and skipping the PLCs.
+                WalkRemoteStations(project.Devices);
+                WalkRemoteStationsInGroups(project.DeviceGroups);
+                if (project.UngroupedDevicesGroup != null)
                 {
-                    string plcName = GetPlcName(plc.DeviceItems, plc.Name.ToString(), out bool isPlc);
-                    WalkProfinetNetworks(plc.DeviceItems, plcName);
+                    WalkRemoteStations(project.UngroupedDevicesGroup.Devices);
                 }
 
                 Log("\n[SCAN] Completed successfully.");
@@ -777,87 +787,40 @@ namespace TiaDiagnosticGui
             }
         }
 
-        private void WalkProfinetNetworks(dynamic items, string controllingPlcName)
+        private void WalkRemoteStations(dynamic devices)
         {
-            if (items == null) return;
-            foreach (dynamic item in items)
+            if (devices == null) return;
+            foreach (dynamic device in devices)
             {
-                if (item != null)
+                string stationName = "Unknown";
+                try { stationName = device.Name.ToString(); } catch { }
+
+                // Ensure this isn't a PLC we already processed
+                string plcName = GetPlcName(device.DeviceItems, stationName, out bool isPlc);
+                if (!isPlc)
                 {
-                    try
+                    string controllingPlcName = ResolveControllingPlc(device.DeviceItems, plcName);
+
+                    if (controllingPlcName == plcName)
                     {
-                        var networkInterface = item.GetService("Siemens.Engineering.HW.Features.NetworkInterface");
-                        if (networkInterface != null)
-                        {
-                            var ioControllers = networkInterface.IoControllers;
-                            if (ioControllers != null)
-                            {
-                                foreach (var controller in ioControllers)
-                                {
-                                    var ioSystem = controller.IoSystem;
-                                    if (ioSystem != null)
-                                    {
-                                        string ioSystemName = ioSystem.Name.ToString();
-                                        Log($"\n>>> IO SYSTEM: {ioSystemName} (Owner: {controllingPlcName})");
-
-                                        // Walk the devices on this IO System
-                                        foreach (var station in ioSystem.IoSystemStations)
-                                        {
-                                            string stationName = "Unknown";
-                                            try { stationName = station.Name.ToString(); } catch { }
-
-                                            // Ensure this isn't another PLC we already processed
-                                            GetPlcName(station.DeviceItems, stationName, out bool isPlc);
-                                            if (!isPlc)
-                                            {
-                                                Log($"  >>> REMOTE STATION: {stationName}");
-                                                RecursiveWalk(station.DeviceItems, controllingPlcName);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Handle Profibus DP Masters
-                            try
-                            {
-                                var dpMasters = networkInterface.DpMasters;
-                                if (dpMasters != null)
-                                {
-                                    foreach (var master in dpMasters)
-                                    {
-                                        var dpSystem = master.DpSystem;
-                                        if (dpSystem != null)
-                                        {
-                                            string dpSystemName = dpSystem.Name.ToString();
-                                            Log($"\n>>> DP SYSTEM: {dpSystemName} (Owner: {controllingPlcName})");
-
-                                            foreach (var station in dpSystem.DpSystemStations)
-                                            {
-                                                string stationName = "Unknown";
-                                                try { stationName = station.Name.ToString(); } catch { }
-
-                                                GetPlcName(station.DeviceItems, stationName, out bool isPlc);
-                                                if (!isPlc)
-                                                {
-                                                    Log($"  >>> REMOTE STATION: {stationName}");
-                                                    RecursiveWalk(station.DeviceItems, controllingPlcName);
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            catch { }
-                        }
+                        Log($"\n>>> UNASSIGNED/REMOTE STATION: {stationName}");
                     }
-                    catch { }
-
-                    if (item.DeviceItems != null)
+                    else
                     {
-                        WalkProfinetNetworks(item.DeviceItems, controllingPlcName);
+                        Log($"\n>>> DISTRIBUTED IO: {stationName} (Owner: {controllingPlcName})");
                     }
+                    RecursiveWalk(device.DeviceItems, controllingPlcName);
                 }
+            }
+        }
+
+        private void WalkRemoteStationsInGroups(dynamic groups)
+        {
+            if (groups == null) return;
+            foreach (dynamic group in groups)
+            {
+                WalkRemoteStations(group.Devices);
+                if (group.Groups != null) WalkRemoteStationsInGroups(group.Groups);
             }
         }
 
