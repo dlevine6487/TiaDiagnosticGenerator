@@ -42,6 +42,7 @@ namespace TiaDiagnosticGui
             this.csvReportData = new List<string>();
             this.diagnosticModules = new List<DiagnosticModuleInfo>();
             this.ioSystemToPlc = new Dictionary<string, string>();
+            this.plcHardwareConstants = new Dictionary<string, Dictionary<string, string>>();
 
             btnConnect = new Button();
             btnConnect.Text = "Connect & Scan All";
@@ -501,8 +502,8 @@ namespace TiaDiagnosticGui
                 // Find the PLC
                 dynamic? targetPlc = null;
                 FindPlcByName(project.Devices, plcName, ref targetPlc);
-                if (targetPlc == null && project.DeviceGroups != null) FindPlcByNameInGroups(project.DeviceGroups, plcName, ref targetPlc);
-                if (targetPlc == null && project.UngroupedDevicesGroup != null) FindPlcByName(project.UngroupedDevicesGroup.Devices, plcName, ref targetPlc);
+                if (targetPlc == null && project.DeviceGroups != null) FindPlcByNameInGroups(project.DeviceGroups!, plcName, ref targetPlc);
+                if (targetPlc == null && project.UngroupedDevicesGroup != null) FindPlcByName(project.UngroupedDevicesGroup!.Devices, plcName, ref targetPlc);
 
                 if (targetPlc != null)
                 {
@@ -651,10 +652,10 @@ namespace TiaDiagnosticGui
 
                 // Find all PLCs
                 FindPlcs(project.Devices, plcs);
-                FindPlcsInGroups(project.DeviceGroups, plcs);
+                FindPlcsInGroups(project.DeviceGroups!, plcs);
                 if (project.UngroupedDevicesGroup != null)
                 {
-                    FindPlcs(project.UngroupedDevicesGroup.Devices, plcs);
+                    FindPlcs(project.UngroupedDevicesGroup!.Devices, plcs);
                 }
 
                 // First, iterate all PLCs to build their mapping databases
@@ -683,10 +684,10 @@ namespace TiaDiagnosticGui
                 // Now iterate all devices again, but ONLY look at remote stations.
                 // We do this by scanning all devices globally and skipping the PLCs.
                 WalkRemoteStations(project.Devices);
-                WalkRemoteStationsInGroups(project.DeviceGroups);
+                WalkRemoteStationsInGroups(project.DeviceGroups!);
                 if (project.UngroupedDevicesGroup != null)
                 {
-                    WalkRemoteStations(project.UngroupedDevicesGroup.Devices);
+                    WalkRemoteStations(project.UngroupedDevicesGroup!.Devices);
                 }
 
                 Log("\n[SCAN] Completed successfully.");
