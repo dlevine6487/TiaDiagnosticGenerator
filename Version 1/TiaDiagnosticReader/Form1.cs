@@ -1324,10 +1324,11 @@ namespace TiaDiagnosticGui
             }
             catch { }
 
-            // Add to cache if diagnostics were found
-            if (hasDiagnostics)
+            // Add to cache if the module has a valid hardware ID, regardless of discovered diagnostic attributes.
+            // The user requested ALL IO cards on the system to be included in the OB82 interrupt block.
+            if (hwId != "0")
             {
-                // Ensure at least 1 channel if diagnostics found
+                // Ensure at least 1 channel
                 if (maxChannelCount == 0) maxChannelCount = 1;
 
                 lock (diagnosticModules)
