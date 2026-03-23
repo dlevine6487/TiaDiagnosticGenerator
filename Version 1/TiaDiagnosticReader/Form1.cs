@@ -17,10 +17,13 @@ namespace TiaDiagnosticGui
         private Button btnGenerateScl;
         private ComboBox cmbPlcSelect;
         private Label lblPlcSelect;
+        private CheckBox chkSilentImport;
         private RichTextBox txtOutput;
         private List<string> csvReportData;
         private List<DiagnosticModuleInfo> diagnosticModules;
         private Dictionary<string, string> ioSystemToPlc; // Maps IO System Name -> Controlling PLC Name
+        private Dictionary<string, Dictionary<string, string>> plcHardwareConstants; // Maps PLC Name -> (HwId -> ConstantName)
+        private const string LAST_PATH_FILE = "last_export_path.txt";
 
         public class DiagnosticModuleInfo
         {
@@ -67,13 +70,18 @@ namespace TiaDiagnosticGui
 
             cmbPlcSelect = new ComboBox();
             cmbPlcSelect.Location = new System.Drawing.Point(480, 10);
-            cmbPlcSelect.Width = 200;
+            cmbPlcSelect.Width = 150;
             cmbPlcSelect.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbPlcSelect.Enabled = false;
 
+            chkSilentImport = new CheckBox();
+            chkSilentImport.Text = "Silent Import";
+            chkSilentImport.Location = new System.Drawing.Point(640, 12);
+            chkSilentImport.Width = 100;
+
             btnGenerateScl = new Button();
-            btnGenerateScl.Text = "Generate SCL";
-            btnGenerateScl.Location = new System.Drawing.Point(690, 10);
+            btnGenerateScl.Text = "Generate & Save";
+            btnGenerateScl.Location = new System.Drawing.Point(750, 10);
             btnGenerateScl.Width = 120;
             btnGenerateScl.Enabled = false;
             btnGenerateScl.Click += BtnGenerateScl_Click;
@@ -92,6 +100,7 @@ namespace TiaDiagnosticGui
             this.Controls.Add(btnExportCsv);
             this.Controls.Add(lblPlcSelect);
             this.Controls.Add(cmbPlcSelect);
+            this.Controls.Add(chkSilentImport);
             this.Controls.Add(btnGenerateScl);
             this.Controls.Add(txtOutput);
         }
@@ -108,18 +117,29 @@ namespace TiaDiagnosticGui
 
             using (FolderBrowserDialog fbd = new FolderBrowserDialog())
             {
-                fbd.Description = "Select a folder to save the generated S7DCL/S7res files";
+                fbd.Description = "Select a folder to save the generated files";
+
+                // Set initial directory from memory
+                if (File.Exists(LAST_PATH_FILE))
+                {
+                    try { fbd.SelectedPath = File.ReadAllText(LAST_PATH_FILE); } catch { }
+                }
+
                 if (fbd.ShowDialog() == DialogResult.OK)
                 {
+                    // Save path for next time
+                    try { File.WriteAllText(LAST_PATH_FILE, fbd.SelectedPath); } catch { }
+
                     btnGenerateScl.Enabled = false;
-                    Log($"Generating SCL/S7DCL files for station: {selectedStation}...");
+                    Log($"Generating VCI files for station: {selectedStation}...");
+                    bool doImport = chkSilentImport.Checked;
 
                     await Task.Run(() =>
                     {
                         try
                         {
-                            GenerateAndSaveVciFiles(fbd.SelectedPath, selectedStation);
-                            Log($"\n[SCL GENERATION] Successfully saved VCI files to {fbd.SelectedPath}");
+                            GenerateAndSaveVciFiles(fbd.SelectedPath, selectedStation, doImport);
+                            Log($"\n[GENERATION] Successfully saved files to {fbd.SelectedPath}");
                         }
                         catch (Exception ex)
                         {
@@ -132,7 +152,7 @@ namespace TiaDiagnosticGui
             }
         }
 
-        private void GenerateAndSaveVciFiles(string outDir, string selectedStation)
+        private void GenerateAndSaveVciFiles(string outDir, string selectedStation, bool silentImport)
         {
             string udtDir = Path.Combine(outDir, "UDT");
             Directory.CreateDirectory(udtDir);
@@ -161,203 +181,10 @@ namespace TiaDiagnosticGui
             }
 
             // ==========================================
-            // Generate UDTs (S7DCL & S7res)
+            // Generate Data Blocks and OB82 XML
             // ==========================================
 
-            // 1. typeModuleDiag
-            string tmDiagS7dcl = @"    TYPE
-        typeModuleDiag : STRUCT
-        { S7_MLC := ""MLC_modSc"" }
-        shortCircuit : Bool;
-        { S7_MLC := ""MLC_modWb"" }
-        wireBreak : Bool;
-        { S7_MLC := ""MLC_modHle"" }
-        highLimitExceeded : Bool;
-        { S7_MLC := ""MLC_modLle"" }
-        lowLimitExceeded : Bool;
-        { S7_MLC := ""MLC_modNsv"" }
-        noSupplyVoltage : Bool;
-        END_STRUCT;
-    END_TYPE";
-
-            string tmDiagS7res = @"MultiLingualTexts:
-  - id: MLC_modSc
-    en-US: Short circuit
-  - id: MLC_modWb
-    en-US: Wire break
-  - id: MLC_modHle
-    en-US: High limit exceeded
-  - id: MLC_modLle
-    en-US: Low limit exceeded
-  - id: MLC_modNsv
-    en-US: No supply voltage";
-
-            File.WriteAllText(Path.Combine(udtDir, "typeModuleDiag.s7dcl"), tmDiagS7dcl);
-            File.WriteAllText(Path.Combine(udtDir, "typeModuleDiag.s7res"), tmDiagS7res);
-
-            // 2. typeChannelDiag
-            string tcDiagS7dcl = @"    TYPE
-        typeChannelDiag : STRUCT
-        { S7_MLC := ""MLC_chErr"" }
-        error : Bool;
-        { S7_MLC := ""MLC_chErrCode"" }
-        errorCode : Word;
-        END_STRUCT;
-    END_TYPE";
-
-            string tcDiagS7res = @"MultiLingualTexts:
-  - id: MLC_chErr
-    en-US: Error existing
-  - id: MLC_chErrCode
-    en-US: Error code";
-
-            File.WriteAllText(Path.Combine(udtDir, "typeChannelDiag.s7dcl"), tcDiagS7dcl);
-            File.WriteAllText(Path.Combine(udtDir, "typeChannelDiag.s7res"), tcDiagS7res);
-
-            // 3. typeChannel
-            string tChanS7dcl = $@"    TYPE
-        typeChannel : STRUCT
-        {{ S7_MLC := ""MLC_chArr"" }}
-        channel : Array[0..{maxChannelsAll - 1}] of ""typeChannelDiag"";
-        END_STRUCT;
-    END_TYPE";
-
-            string tChanS7res = @"MultiLingualTexts:
-  - id: MLC_chArr
-    en-US: Array of channel diagnostics";
-
-            File.WriteAllText(Path.Combine(udtDir, "typeChannel.s7dcl"), tChanS7dcl);
-            File.WriteAllText(Path.Combine(udtDir, "typeChannel.s7res"), tChanS7res);
-
-            // 4. typeDiag
-            string tDiagS7dcl = @"    TYPE
-        typeDiag : STRUCT
-        { S7_MLC := ""MLC_dgErr"" }
-        error : Bool;
-        { S7_MLC := ""MLC_dgMul"" }
-        multiError : Bool;
-        { S7_MLC := ""MLC_dgCnt"" }
-        errorCounter : Int;
-        { S7_MLC := ""MLC_dgCh"" }
-        channels : ""typeChannel"";
-        END_STRUCT;
-    END_TYPE";
-
-            string tDiagS7res = @"MultiLingualTexts:
-  - id: MLC_dgErr
-    en-US: Overall Error
-  - id: MLC_dgMul
-    en-US: Multiple Errors Present
-  - id: MLC_dgCnt
-    en-US: Error Counter
-  - id: MLC_dgCh
-    en-US: Channels";
-
-            File.WriteAllText(Path.Combine(udtDir, "typeDiag.s7dcl"), tDiagS7dcl);
-            File.WriteAllText(Path.Combine(udtDir, "typeDiag.s7res"), tDiagS7res);
-
-
-            // ==========================================
-            // Generate Code Blocks (.scl for SCL blocks)
-            // ==========================================
-
-            // 5. FC ModuleDiag
-            System.Text.StringBuilder fcScl = new System.Text.StringBuilder();
-            fcScl.AppendLine("FUNCTION \"ModuleDiag\" : Void");
-            fcScl.AppendLine("{ S7_Optimized_Access := 'TRUE' }");
-            fcScl.AppendLine("VERSION : 0.1");
-            fcScl.AppendLine("   VAR_INPUT");
-            fcScl.AppendLine("      errorCode : Word;");
-            fcScl.AppendLine("   END_VAR");
-            fcScl.AppendLine("   VAR_IN_OUT");
-            fcScl.AppendLine("      moduleDiag : \"typeModuleDiag\";");
-            fcScl.AppendLine("   END_VAR");
-            fcScl.AppendLine("BEGIN");
-            fcScl.AppendLine("   // Reset all errors first");
-            fcScl.AppendLine("   #moduleDiag.shortCircuit := FALSE;");
-            fcScl.AppendLine("   #moduleDiag.wireBreak := FALSE;");
-            fcScl.AppendLine("   #moduleDiag.highLimitExceeded := FALSE;");
-            fcScl.AppendLine("   #moduleDiag.lowLimitExceeded := FALSE;");
-            fcScl.AppendLine("   #moduleDiag.noSupplyVoltage := FALSE;");
-            fcScl.AppendLine("");
-            fcScl.AppendLine("   CASE WORD_TO_INT(#errorCode) OF");
-            fcScl.AppendLine("      1:");
-            fcScl.AppendLine("         #moduleDiag.shortCircuit := TRUE;");
-            fcScl.AppendLine("      6:");
-            fcScl.AppendLine("         #moduleDiag.wireBreak := TRUE;");
-            fcScl.AppendLine("      7:");
-            fcScl.AppendLine("         #moduleDiag.highLimitExceeded := TRUE;");
-            fcScl.AppendLine("      8:");
-            fcScl.AppendLine("         #moduleDiag.lowLimitExceeded := TRUE;");
-            fcScl.AppendLine("      17:");
-            fcScl.AppendLine("         #moduleDiag.noSupplyVoltage := TRUE;");
-            fcScl.AppendLine("   END_CASE;");
-            fcScl.AppendLine("END_FUNCTION");
-            File.WriteAllText(Path.Combine(outDir, "ModuleDiag.scl"), fcScl.ToString());
-
-            // 6. FB 1500Diag82
-            System.Text.StringBuilder fbScl = new System.Text.StringBuilder();
-            fbScl.AppendLine("FUNCTION_BLOCK \"1500Diag82\"");
-            fbScl.AppendLine("{ S7_Optimized_Access := 'TRUE' }");
-            fbScl.AppendLine("VERSION : 0.1");
-            fbScl.AppendLine("   VAR_INPUT");
-            fbScl.AppendLine("      F_ID : HW_IO;");
-            fbScl.AppendLine("   END_VAR");
-            fbScl.AppendLine("   VAR_OUTPUT");
-            fbScl.AppendLine("      new : Bool;");
-            fbScl.AppendLine("      status : DWord;");
-            fbScl.AppendLine("      id : HW_IO;");
-            fbScl.AppendLine("      len : UInt;");
-            fbScl.AppendLine("      areaLenError : Bool;");
-            fbScl.AppendLine("   END_VAR");
-            fbScl.AppendLine("   VAR_IN_OUT");
-            fbScl.AppendLine("      Diag : \"typeDiag\";");
-            fbScl.AppendLine("   END_VAR");
-            fbScl.AppendLine("   VAR");
-            fbScl.AppendLine("      ralrm : RALRM;");
-            fbScl.AppendLine("      tinfo : TINFO_OB;");
-            fbScl.AppendLine("      ainfo : AINFO_OB;");
-            fbScl.AppendLine("      channelNumber : Int;");
-            fbScl.AppendLine("      channelError : Bool;");
-            fbScl.AppendLine("   END_VAR");
-            fbScl.AppendLine("BEGIN");
-            fbScl.AppendLine("   #ralrm(MODE := 2,");
-            fbScl.AppendLine("          F_ID := #F_ID,");
-            fbScl.AppendLine("          NEW => #new,");
-            fbScl.AppendLine("          STATUS => #status,");
-            fbScl.AppendLine("          ID => #id,");
-            fbScl.AppendLine("          LEN => #len,");
-            fbScl.AppendLine("          TINFO := #tinfo,");
-            fbScl.AppendLine("          AINFO := #ainfo);");
-            fbScl.AppendLine("");
-            fbScl.AppendLine("   IF #new THEN");
-            fbScl.AppendLine("      #channelNumber := UINT_TO_INT(#ainfo.USI); // Channel number from User Structure Identifier");
-            fbScl.AppendLine("      #channelError := (#tinfo.OB_NUM = 82) AND (#tinfo.PRG_INFO = 16#39); // Event incoming");
-            fbScl.AppendLine("");
-            fbScl.AppendLine("      // Ensure channel is within array bounds");
-            fbScl.AppendLine($"      IF (#channelNumber >= 0) AND (#channelNumber <= {maxChannelsAll - 1}) THEN");
-            fbScl.AppendLine("         #Diag.channels.channel[#channelNumber].error := #channelError;");
-            fbScl.AppendLine("         IF #channelError THEN");
-            fbScl.AppendLine("            #Diag.channels.channel[#channelNumber].errorCode := #ainfo.ERR_MOD; // Example, map to correct error word");
-            fbScl.AppendLine("         ELSE");
-            fbScl.AppendLine("            #Diag.channels.channel[#channelNumber].errorCode := 16#0;");
-            fbScl.AppendLine("         END_IF;");
-            fbScl.AppendLine("      END_IF;");
-            fbScl.AppendLine("");
-            fbScl.AppendLine("      // Multi-error handling (simplified)");
-            fbScl.AppendLine("      IF #channelError THEN");
-            fbScl.AppendLine("         #Diag.errorCounter := #Diag.errorCounter + 1;");
-            fbScl.AppendLine("      ELSIF #Diag.errorCounter > 0 THEN");
-            fbScl.AppendLine("         #Diag.errorCounter := #Diag.errorCounter - 1;");
-            fbScl.AppendLine("      END_IF;");
-            fbScl.AppendLine("");
-            fbScl.AppendLine("      #Diag.error := #Diag.errorCounter > 0;");
-            fbScl.AppendLine("      #Diag.multiError := #Diag.errorCounter > 1;");
-            fbScl.AppendLine("   END_IF;");
-            fbScl.AppendLine("END_FUNCTION_BLOCK");
-            File.WriteAllText(Path.Combine(outDir, "1500Diag82.scl"), fbScl.ToString());
-
-            // 7. Data block for tags (Tags.s7dcl)
+            // 1. Data block for tags (Tags.s7dcl)
             System.Text.StringBuilder tagsS7dcl = new System.Text.StringBuilder();
             tagsS7dcl.AppendLine(@"        {
            S7_Optimized := ""TRUE"";
@@ -392,19 +219,7 @@ namespace TiaDiagnosticGui
             tagsS7dcl.AppendLine("    END_DATA_BLOCK");
             File.WriteAllText(Path.Combine(outDir, "Tags.s7dcl"), tagsS7dcl.ToString());
 
-            // Add typeDiag82 struct to match the example outputs
-            string tDiag82S7dcl = @"    TYPE
-        typeDiag82 : STRUCT
-        new : Bool;
-        status : DWord;
-        id : HW_IO;
-        len : UInt;
-        areaLenError : Bool;
-        END_STRUCT;
-    END_TYPE";
-            File.WriteAllText(Path.Combine(udtDir, "typeDiag82.s7dcl"), tDiag82S7dcl);
-
-            // 8. OB82 (DiagnosticErrorInterrupt) in XML format (FBD representation)
+            // 2. OB82 (DiagnosticErrorInterrupt) in XML format (FBD representation)
             System.Text.StringBuilder obXml = new System.Text.StringBuilder();
             obXml.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
             obXml.AppendLine("<Document>");
@@ -666,7 +481,117 @@ namespace TiaDiagnosticGui
             obXml.AppendLine("    </ObjectList>");
             obXml.AppendLine("  </SW.Blocks.OB>");
             obXml.AppendLine("</Document>");
-            File.WriteAllText(Path.Combine(outDir, "DiagnosticErrorInterrupt.xml"), obXml.ToString());
+
+            string ob82File = Path.Combine(outDir, "DiagnosticErrorInterrupt.xml");
+            File.WriteAllText(ob82File, obXml.ToString());
+
+            if (silentImport)
+            {
+                Log($"\n[IMPORT] Attempting silent import to {selectedStation}...");
+                PerformSilentImport(selectedStation, outDir);
+            }
+        }
+
+        private void PerformSilentImport(string plcName, string importDir)
+        {
+            try
+            {
+                if (project == null) return;
+
+                // Find the PLC
+                dynamic? targetPlc = null;
+                FindPlcByName(project.Devices, plcName, ref targetPlc);
+                if (targetPlc == null && project.DeviceGroups != null) FindPlcByNameInGroups(project.DeviceGroups, plcName, ref targetPlc);
+                if (targetPlc == null && project.UngroupedDevicesGroup != null) FindPlcByName(project.UngroupedDevicesGroup.Devices, plcName, ref targetPlc);
+
+                if (targetPlc != null)
+                {
+                    var plcSoftware = targetPlc.GetService("Siemens.Engineering.SW.PlcSoftware");
+                    if (plcSoftware != null)
+                    {
+                        var blockGroup = plcSoftware.BlockGroup;
+                        if (blockGroup != null)
+                        {
+                            string ob82File = Path.Combine(importDir, "DiagnosticErrorInterrupt.xml");
+                            if (File.Exists(ob82File))
+                            {
+                                try
+                                {
+                                    // ImportOptions: Override
+                                    blockGroup.Blocks.Import(new FileInfo(ob82File), Siemens.Engineering.ImportOptions.Override);
+                                    Log("  -> Imported DiagnosticErrorInterrupt.xml successfully.");
+                                }
+                                catch (Exception ex)
+                                {
+                                    Log($"  -> Failed to import OB82: {ex.Message}");
+                                }
+                            }
+                            else
+                            {
+                                Log("  -> DiagnosticErrorInterrupt.xml not found for import.");
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    Log($"[IMPORT] Could not locate PLC software container for {plcName}.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"[IMPORT ERROR] {ex.Message}");
+            }
+        }
+
+        private void FindPlcByName(dynamic devices, string targetName, ref dynamic? foundPlc)
+        {
+            if (devices == null || foundPlc != null) return;
+            foreach (dynamic device in devices)
+            {
+                string plcName = GetPlcName(device.DeviceItems, device.Name.ToString(), out bool isPlc);
+                if (isPlc && plcName == targetName)
+                {
+                    // Return the specific device item that is the PLC container
+                    foundPlc = GetPlcItem(device.DeviceItems);
+                    return;
+                }
+            }
+        }
+
+        private void FindPlcByNameInGroups(dynamic groups, string targetName, ref dynamic? foundPlc)
+        {
+            if (groups == null || foundPlc != null) return;
+            foreach (dynamic group in groups)
+            {
+                FindPlcByName(group.Devices, targetName, ref foundPlc);
+                if (group.Groups != null) FindPlcByNameInGroups(group.Groups, targetName, ref foundPlc);
+            }
+        }
+
+        private dynamic? GetPlcItem(dynamic deviceItems)
+        {
+            if (deviceItems == null) return null;
+            foreach (dynamic item in deviceItems)
+            {
+                try
+                {
+                    var plcContainer = item.GetService("Siemens.Engineering.SW.PlcSoftware");
+                    if (plcContainer != null) return item;
+                }
+                catch { }
+
+                try
+                {
+                    if (item.DeviceItems != null)
+                    {
+                        dynamic? child = GetPlcItem(item.DeviceItems);
+                        if (child != null) return child;
+                    }
+                }
+                catch { }
+            }
+            return null;
         }
 
         private async void BtnConnect_Click(object? sender, EventArgs e)
@@ -678,6 +603,8 @@ namespace TiaDiagnosticGui
             cmbPlcSelect.Items.Clear();
             if (ioSystemToPlc == null) ioSystemToPlc = new Dictionary<string, string>();
             ioSystemToPlc.Clear();
+            if (plcHardwareConstants == null) plcHardwareConstants = new Dictionary<string, Dictionary<string, string>>();
+            plcHardwareConstants.Clear();
 
             btnConnect.Enabled = false;
             Log("Initializing TIA Portal connection on background thread...");
@@ -730,11 +657,17 @@ namespace TiaDiagnosticGui
                     FindPlcs(project.UngroupedDevicesGroup.Devices, plcs);
                 }
 
-                // First, iterate all PLCs to map their IO systems to themselves
+                // First, iterate all PLCs to build their mapping databases
                 foreach (dynamic plc in plcs)
                 {
                     string plcName = GetPlcName(plc.DeviceItems, plc.Name.ToString(), out bool isPlc);
                     MapIoSystemsRecursive(plc.DeviceItems, plcName);
+
+                    if (!plcHardwareConstants.ContainsKey(plcName))
+                    {
+                        plcHardwareConstants[plcName] = new Dictionary<string, string>();
+                    }
+                    BuildSystemConstantsMap(plc.DeviceItems, plcName);
                 }
 
                 // Probe local IO for each PLC
@@ -1104,11 +1037,51 @@ namespace TiaDiagnosticGui
             }
         }
 
-        private void ExtractHardwareIdentifier(dynamic item, ref string hwId, ref string hwConstName)
+        private void BuildSystemConstantsMap(dynamic items, string plcName)
         {
-            if (item == null) return;
+            if (items == null) return;
+            foreach (dynamic item in items)
+            {
+                if (item != null)
+                {
+                    try
+                    {
+                        var systemConstants = item.GetService("Siemens.Engineering.Hw.Features.SystemConstantsProvider");
+                        if (systemConstants != null)
+                        {
+                            foreach (var constant in systemConstants.SystemConstants)
+                            {
+                                string constType = constant.DataType.ToString();
+                                if (constType.StartsWith("HW_"))
+                                {
+                                    string id = constant.Value.ToString();
+                                    string name = constant.Name.ToString();
+                                    // Prefer HW_SubModule or HW_Device if ID already exists
+                                    if (!plcHardwareConstants[plcName].ContainsKey(id) ||
+                                        constType.Equals("HW_SubModule", StringComparison.OrdinalIgnoreCase) ||
+                                        constType.Equals("HW_Device", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        plcHardwareConstants[plcName][id] = name;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch { }
 
-            // Strategy 1: Look directly for the HwIdentifiers node in the object
+                    if (item.DeviceItems != null)
+                    {
+                        BuildSystemConstantsMap(item.DeviceItems, plcName);
+                    }
+                }
+            }
+        }
+
+        private string ExtractRawHardwareIdentifier(dynamic item)
+        {
+            if (item == null) return "0";
+
+            // Strategy 1: Dedicated HwIdentifiers list
             try
             {
                 dynamic identifiers = item.HwIdentifiers;
@@ -1118,55 +1091,19 @@ namespace TiaDiagnosticGui
                     {
                         if (id != null)
                         {
-                            try { hwId = id.GetAttribute("Identifier").ToString(); } catch { }
-                            // Try to get a valid name, but we might just have the raw ID here
                             try
                             {
-                                string name = id.Name.ToString();
-                                if (!string.IsNullOrEmpty(name) && name != "HwIdentifier")
-                                {
-                                    hwConstName = name;
-                                }
+                                string val = id.GetAttribute("Identifier").ToString();
+                                if (!string.IsNullOrEmpty(val) && val != "0") return val;
                             }
                             catch { }
-
-                            // If we successfully pulled an identifier from a dedicated node, return.
-                            if (hwId != "0" && !string.IsNullOrEmpty(hwId)) return;
                         }
                     }
                 }
             }
             catch { }
 
-            // Strategy 2: Get via the SystemConstantsProvider service
-            try
-            {
-                var systemConstants = item.GetService("Siemens.Engineering.Hw.Features.SystemConstantsProvider");
-                if (systemConstants != null)
-                {
-                    foreach (var constant in systemConstants.SystemConstants)
-                    {
-                        string constType = constant.DataType.ToString();
-                        // For ET200SP stations, they might use HW_Device or HW_SubModule. We will take any HW_... constant if we don't have one, but prefer HW_SubModule
-                        if (constType.Equals("HW_SubModule", StringComparison.OrdinalIgnoreCase) ||
-                            constType.Equals("HW_Device", StringComparison.OrdinalIgnoreCase) ||
-                            constType.StartsWith("HW_"))
-                        {
-                            hwId = constant.Value.ToString();
-                            hwConstName = constant.Name.ToString();
-
-                            if (constType.Equals("HW_SubModule", StringComparison.OrdinalIgnoreCase))
-                            {
-                                return; // Best match found
-                            }
-                        }
-                    }
-                    if (hwId != "0" && !string.IsNullOrEmpty(hwId)) return; // Found a good fallback constant
-                }
-            }
-            catch { }
-
-            // Strategy 3: Directly read the "HardwareIdentifier" attribute
+            // Strategy 2: Direct Attribute
             try
             {
                 var attrs = item.GetAttributeInfos();
@@ -1176,15 +1113,15 @@ namespace TiaDiagnosticGui
                     {
                         if (attr.Name.ToString().Equals("HardwareIdentifier", StringComparison.OrdinalIgnoreCase))
                         {
-                            hwId = item.GetAttribute("HardwareIdentifier").ToString();
-                            if (hwId != "0" && !string.IsNullOrEmpty(hwId)) return;
+                            string val = item.GetAttribute("HardwareIdentifier").ToString();
+                            if (!string.IsNullOrEmpty(val) && val != "0") return val;
                         }
                     }
                 }
             }
             catch { }
 
-            // Strategy 4: Recurse into sub-device items (e.g., to find the actual sub-module holding the ID)
+            // Strategy 3: Child lookup
             try
             {
                 dynamic subItems = item.DeviceItems;
@@ -1192,12 +1129,14 @@ namespace TiaDiagnosticGui
                 {
                     foreach (dynamic subItem in subItems)
                     {
-                        ExtractHardwareIdentifier(subItem, ref hwId, ref hwConstName);
-                        if (hwId != "0" && !string.IsNullOrEmpty(hwId)) return;
+                        string val = ExtractRawHardwareIdentifier(subItem);
+                        if (!string.IsNullOrEmpty(val) && val != "0") return val;
                     }
                 }
             }
             catch { }
+
+            return "0";
         }
 
         private void ProbeAllDiagnostics(dynamic item, string stationName)
@@ -1222,8 +1161,14 @@ namespace TiaDiagnosticGui
                 return; // Exclude
             }
 
-            // Extract the hardware identifier natively using recursive deep search
-            ExtractHardwareIdentifier(item, ref hwId, ref hwConstName);
+            // Extract the raw integer hardware identifier
+            hwId = ExtractRawHardwareIdentifier(item);
+
+            // Look up the symbolic name from the controlling PLC's constant mapping
+            if (plcHardwareConstants.ContainsKey(stationName) && plcHardwareConstants[stationName].ContainsKey(hwId))
+            {
+                hwConstName = plcHardwareConstants[stationName][hwId];
+            }
 
             // Keywords we are looking for in the attribute names
             string[] keywords = { "diag", "valuestatus", "wirebreak", "shortcircuit", "overflow", "underflow", "nosupplyvoltage" };
