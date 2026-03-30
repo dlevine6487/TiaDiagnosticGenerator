@@ -14,14 +14,35 @@ namespace TiaDiagnosticGui
         private Button btnConnect;
         private Button btnDisconnect;
         private Button btnExportCsv;
+        private Button btnGenerateScl;
+        private ComboBox cmbPlcSelect;
+        private Label lblPlcSelect;
+        private CheckBox chkSilentImport;
         private RichTextBox txtOutput;
         private List<string> csvReportData;
+        private List<DiagnosticModuleInfo> diagnosticModules;
+        private Dictionary<string, string> ioSystemToPlc; // Maps IO System Name -> Controlling PLC Name
+        private Dictionary<string, Dictionary<string, string>> plcHardwareConstants; // Maps PLC Name -> (HwId -> ConstantName)
+        private const string LAST_PATH_FILE = "last_export_path.txt";
+
+        public class DiagnosticModuleInfo
+        {
+            public string StationName { get; set; } = "";
+            public string ModuleName { get; set; } = "";
+            public string HardwareIdentifier { get; set; } = "";
+            public string HardwareConstantName { get; set; } = "";
+            public int ChannelCount { get; set; } = 0;
+            public bool IsHighFeature { get; set; } = false;
+        }
 
         public Form1()
         {
             this.Text = "TIA Portal V20 Ultimate Diagnostic Scanner";
             this.Size = new System.Drawing.Size(1000, 800);
             this.csvReportData = new List<string>();
+            this.diagnosticModules = new List<DiagnosticModuleInfo>();
+            this.ioSystemToPlc = new Dictionary<string, string>();
+            this.plcHardwareConstants = new Dictionary<string, Dictionary<string, string>>();
 
             btnConnect = new Button();
             btnConnect.Text = "Connect & Scan All";
@@ -43,6 +64,29 @@ namespace TiaDiagnosticGui
             btnExportCsv.Enabled = false;
             btnExportCsv.Click += BtnExportCsv_Click;
 
+            lblPlcSelect = new Label();
+            lblPlcSelect.Text = "Select PLC:";
+            lblPlcSelect.Location = new System.Drawing.Point(410, 13);
+            lblPlcSelect.Width = 70;
+
+            cmbPlcSelect = new ComboBox();
+            cmbPlcSelect.Location = new System.Drawing.Point(480, 10);
+            cmbPlcSelect.Width = 150;
+            cmbPlcSelect.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbPlcSelect.Enabled = false;
+
+            chkSilentImport = new CheckBox();
+            chkSilentImport.Text = "Silent Import";
+            chkSilentImport.Location = new System.Drawing.Point(640, 12);
+            chkSilentImport.Width = 100;
+
+            btnGenerateScl = new Button();
+            btnGenerateScl.Text = "Generate & Save";
+            btnGenerateScl.Location = new System.Drawing.Point(750, 10);
+            btnGenerateScl.Width = 120;
+            btnGenerateScl.Enabled = false;
+            btnGenerateScl.Click += BtnGenerateScl_Click;
+
             txtOutput = new RichTextBox();
             txtOutput.Location = new System.Drawing.Point(10, 45);
             txtOutput.Width = 960;
@@ -55,7 +99,500 @@ namespace TiaDiagnosticGui
             this.Controls.Add(btnConnect);
             this.Controls.Add(btnDisconnect);
             this.Controls.Add(btnExportCsv);
+            this.Controls.Add(lblPlcSelect);
+            this.Controls.Add(cmbPlcSelect);
+            this.Controls.Add(chkSilentImport);
+            this.Controls.Add(btnGenerateScl);
             this.Controls.Add(txtOutput);
+        }
+
+        private async void BtnGenerateScl_Click(object? sender, EventArgs e)
+        {
+            if (diagnosticModules.Count == 0)
+            {
+                Log("No modules with diagnostics were found to generate SCL for.");
+                return;
+            }
+
+            string selectedStation = cmbPlcSelect.SelectedItem?.ToString() ?? "";
+
+            using (FolderBrowserDialog fbd = new FolderBrowserDialog())
+            {
+                fbd.Description = "Select a folder to save the generated files";
+
+                // Set initial directory from memory
+                if (File.Exists(LAST_PATH_FILE))
+                {
+                    try { fbd.SelectedPath = File.ReadAllText(LAST_PATH_FILE); } catch { }
+                }
+
+                if (fbd.ShowDialog() == DialogResult.OK)
+                {
+                    // Save path for next time
+                    try { File.WriteAllText(LAST_PATH_FILE, fbd.SelectedPath); } catch { }
+
+                    btnGenerateScl.Enabled = false;
+                    Log($"Generating VCI files for station: {selectedStation}...");
+                    bool doImport = chkSilentImport.Checked;
+
+                    await Task.Run(() =>
+                    {
+                        try
+                        {
+                            GenerateAndSaveVciFiles(fbd.SelectedPath, selectedStation, doImport);
+                            Log($"\n[GENERATION] Successfully saved files to {fbd.SelectedPath}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Log($"Error generating files: {ex.Message}");
+                        }
+                    });
+
+                    btnGenerateScl.Enabled = true;
+                }
+            }
+        }
+
+        private void GenerateAndSaveVciFiles(string outDir, string selectedStation, bool silentImport)
+        {
+            string udtDir = Path.Combine(outDir, "UDT");
+            Directory.CreateDirectory(udtDir);
+
+            // Filter modules for the selected station
+            var stationModules = new List<DiagnosticModuleInfo>();
+            foreach (var mod in diagnosticModules)
+            {
+                if (string.IsNullOrEmpty(selectedStation) || mod.StationName == selectedStation)
+                {
+                    stationModules.Add(mod);
+                }
+            }
+
+            if (stationModules.Count == 0)
+            {
+                Log($"No diagnostic modules found for station {selectedStation}.");
+                return;
+            }
+
+            // Find max channel count
+            int maxChannelsAll = 1;
+            foreach (var mod in stationModules)
+            {
+                if (mod.ChannelCount > maxChannelsAll) maxChannelsAll = mod.ChannelCount;
+            }
+
+            // ==========================================
+            // Generate Data Blocks and OB82 XML
+            // ==========================================
+
+            // 1. Data block for tags (Tags.s7dcl)
+            System.Text.StringBuilder tagsS7dcl = new System.Text.StringBuilder();
+            tagsS7dcl.AppendLine(@"        {
+           S7_Optimized := ""TRUE"";
+           S7_StandardRetain := ""FALSE"";
+           S7_Version := ""0.1""
+        }");
+            tagsS7dcl.AppendLine("    DATA_BLOCK Tags");
+            tagsS7dcl.AppendLine("        VAR");
+
+            // Add counter for OB82 executions
+            tagsS7dcl.AppendLine("            ob82counter : DInt;");
+
+            // Generate array for output statuses
+            if (stationModules.Count > 0)
+            {
+                tagsS7dcl.AppendLine($"            diag82 : Array[1..{stationModules.Count}] of \"typeDiag82\";");
+            }
+
+            int idx = 1;
+            foreach (var mod in stationModules)
+            {
+                // Generate safe names without spaces or invalid chars
+                string safeName = System.Text.RegularExpressions.Regex.Replace(mod.ModuleName, @"[^a-zA-Z0-9_]", "");
+                if (string.IsNullOrEmpty(safeName) || char.IsDigit(safeName[0]))
+                {
+                    safeName = "Mod" + safeName + "_" + idx;
+                }
+                tagsS7dcl.AppendLine($"            {safeName} : \"typeDiag\";");
+                idx++;
+            }
+            tagsS7dcl.AppendLine("        END_VAR");
+            tagsS7dcl.AppendLine("    END_DATA_BLOCK");
+            File.WriteAllText(Path.Combine(outDir, "Tags.s7dcl"), tagsS7dcl.ToString());
+
+            // 2. OB82 (DiagnosticErrorInterrupt) in XML format (FBD representation)
+            System.Text.StringBuilder obXml = new System.Text.StringBuilder();
+            obXml.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+            obXml.AppendLine("<Document>");
+            obXml.AppendLine("  <Engineering version=\"V20\" />");
+            obXml.AppendLine("  <SW.Blocks.OB ID=\"0\">");
+            obXml.AppendLine("    <AttributeList>");
+            obXml.AppendLine("      <Interface><Sections xmlns=\"http://www.siemens.com/automation/Openness/SW/Interface/v5\">");
+            obXml.AppendLine("  <Section Name=\"Input\">");
+            obXml.AppendLine("    <Member Name=\"IO_State\" Datatype=\"Word\" Informative=\"true\"></Member>");
+            obXml.AppendLine("    <Member Name=\"LADDR\" Datatype=\"HW_ANY\" Informative=\"true\"></Member>");
+            obXml.AppendLine("    <Member Name=\"Channel\" Datatype=\"UInt\" Informative=\"true\"></Member>");
+            obXml.AppendLine("    <Member Name=\"MultiError\" Datatype=\"Bool\" Informative=\"true\"></Member>");
+            obXml.AppendLine("  </Section>");
+            obXml.AppendLine("  <Section Name=\"Temp\" />");
+            obXml.AppendLine("  <Section Name=\"Constant\" />");
+            obXml.AppendLine("</Sections></Interface>");
+            obXml.AppendLine("      <MemoryLayout>Optimized</MemoryLayout>");
+            obXml.AppendLine("      <Name>DiagnosticErrorInterrupt</Name>");
+            obXml.AppendLine("      <Namespace />");
+            obXml.AppendLine("      <Number>82</Number>");
+            obXml.AppendLine("      <ProgrammingLanguage>FBD</ProgrammingLanguage>");
+            obXml.AppendLine("      <SecondaryType>DiagnosticErrorInterrupt</SecondaryType>");
+            obXml.AppendLine("      <SetENOAutomatically>false</SetENOAutomatically>");
+            obXml.AppendLine("    </AttributeList>");
+            obXml.AppendLine("    <ObjectList>");
+
+            idx = 1; // Reuse the previously defined idx variable
+            int compileUnitId = 3; // Global ID in the XML tree for CompileUnits
+            int multiTextId = 4;   // Global ID in the XML tree for MultilingualText
+            int uidBase = 20;      // Global UId for FlgNet elements across all networks
+
+            foreach (var mod in stationModules)
+            {
+                string safeName = System.Text.RegularExpressions.Regex.Replace(mod.ModuleName, @"[^a-zA-Z0-9_]", "");
+                if (string.IsNullOrEmpty(safeName) || char.IsDigit(safeName[0])) safeName = "Mod" + safeName + "_" + idx;
+
+                obXml.AppendLine($"      <SW.Blocks.CompileUnit ID=\"{compileUnitId:X}\" CompositionName=\"CompileUnits\">");
+                obXml.AppendLine("        <AttributeList>");
+                obXml.AppendLine("          <NetworkSource><FlgNet xmlns=\"http://www.siemens.com/automation/Openness/SW/NetworkSource/FlgNet/v5\">");
+                obXml.AppendLine("  <Parts>");
+
+                // Hardware constant access using the system constant name if available, otherwise fallback to literal
+                if (!string.IsNullOrEmpty(mod.HardwareConstantName))
+                {
+                    obXml.AppendLine($"    <Access Scope=\"GlobalConstant\" UId=\"{uidBase + 1}\">");
+                    obXml.AppendLine("      <Constant Name=\"" + mod.HardwareConstantName + "\" />");
+                    obXml.AppendLine("    </Access>");
+                }
+                else
+                {
+                    obXml.AppendLine($"    <Access Scope=\"LiteralConstant\" UId=\"{uidBase + 1}\">");
+                    obXml.AppendLine($"      <Constant>");
+                    obXml.AppendLine($"        <ConstantType>HW_IO</ConstantType>");
+                    obXml.AppendLine($"        <ConstantValue>{mod.HardwareIdentifier}</ConstantValue>");
+                    obXml.AppendLine($"      </Constant>");
+                    obXml.AppendLine("    </Access>");
+                }
+
+                // Diag struct access
+                obXml.AppendLine($"    <Access Scope=\"GlobalVariable\" UId=\"{uidBase + 2}\">");
+                obXml.AppendLine("      <Symbol>");
+                obXml.AppendLine("        <Component Name=\"Tags\" />");
+                obXml.AppendLine($"        <Component Name=\"{safeName}\" />");
+                obXml.AppendLine("      </Symbol>");
+                obXml.AppendLine("    </Access>");
+
+                // diag82 variables access
+                string[] outVars = { "new", "status", "id", "len", "areaLenError" };
+                for (int i = 0; i < outVars.Length; i++)
+                {
+                    obXml.AppendLine($"    <Access Scope=\"GlobalVariable\" UId=\"{uidBase + 10 + i}\">");
+                    obXml.AppendLine("      <Symbol>");
+                    obXml.AppendLine("        <Component Name=\"Tags\" />");
+                    obXml.AppendLine("        <Component Name=\"diag82\" AccessModifier=\"Array\">");
+                    obXml.AppendLine("          <Access Scope=\"LiteralConstant\">");
+                    obXml.AppendLine("            <Constant>");
+                    obXml.AppendLine("              <ConstantType>DInt</ConstantType>");
+                    obXml.AppendLine($"              <ConstantValue>{idx}</ConstantValue>");
+                    obXml.AppendLine("            </Constant>");
+                    obXml.AppendLine("          </Access>");
+                    obXml.AppendLine("        </Component>");
+                    obXml.AppendLine($"        <Component Name=\"{outVars[i]}\" />");
+                    obXml.AppendLine("      </Symbol>");
+                    obXml.AppendLine("    </Access>");
+                }
+
+                // FB Call
+                obXml.AppendLine($"    <Call UId=\"{uidBase + 3}\">");
+                obXml.AppendLine("      <CallInfo Name=\"1500Diag82\" BlockType=\"FB\">");
+                obXml.AppendLine($"        <Instance Scope=\"GlobalVariable\" UId=\"{uidBase + 4}\">");
+                obXml.AppendLine($"          <Component Name=\"Inst_{safeName}\" />");
+                obXml.AppendLine("        </Instance>");
+                obXml.AppendLine("        <Parameter Name=\"fId\" Section=\"Input\" Type=\"HW_IO\" />");
+                obXml.AppendLine("        <Parameter Name=\"new\" Section=\"Output\" Type=\"Bool\" />");
+                obXml.AppendLine("        <Parameter Name=\"status\" Section=\"Output\" Type=\"DWord\" />");
+                obXml.AppendLine("        <Parameter Name=\"id\" Section=\"Output\" Type=\"HW_IO\" />");
+                obXml.AppendLine("        <Parameter Name=\"len\" Section=\"Output\" Type=\"UInt\" />");
+                obXml.AppendLine("        <Parameter Name=\"areaLenError\" Section=\"Output\" Type=\"Bool\" />");
+                obXml.AppendLine("        <Parameter Name=\"diag\" Section=\"InOut\" Type=\"&quot;typeDiag&quot;\" />");
+                obXml.AppendLine("      </CallInfo>");
+                obXml.AppendLine("    </Call>");
+
+                obXml.AppendLine("  </Parts>");
+                obXml.AppendLine("  <Wires>");
+
+                obXml.AppendLine($"    <Wire UId=\"{uidBase + 5}\">");
+                obXml.AppendLine($"      <OpenCon UId=\"{uidBase + 6}\" />");
+                obXml.AppendLine($"      <NameCon UId=\"{uidBase + 3}\" Name=\"en\" />");
+                obXml.AppendLine("    </Wire>");
+                obXml.AppendLine($"    <Wire UId=\"{uidBase + 7}\">");
+                obXml.AppendLine($"      <IdentCon UId=\"{uidBase + 1}\" />");
+                obXml.AppendLine($"      <NameCon UId=\"{uidBase + 3}\" Name=\"fId\" />");
+                obXml.AppendLine("    </Wire>");
+
+                for (int i = 0; i < outVars.Length; i++)
+                {
+                    obXml.AppendLine($"    <Wire UId=\"{uidBase + 20 + i}\">");
+                    obXml.AppendLine($"      <NameCon UId=\"{uidBase + 3}\" Name=\"{outVars[i]}\" />");
+                    obXml.AppendLine($"      <IdentCon UId=\"{uidBase + 10 + i}\" />");
+                    obXml.AppendLine("    </Wire>");
+                }
+
+                obXml.AppendLine($"    <Wire UId=\"{uidBase + 8}\">");
+                obXml.AppendLine($"      <IdentCon UId=\"{uidBase + 2}\" />");
+                obXml.AppendLine($"      <NameCon UId=\"{uidBase + 3}\" Name=\"diag\" />");
+                obXml.AppendLine("    </Wire>");
+
+                // Increment uidBase significantly to ensure no overlaps in next network
+                uidBase += 30 + outVars.Length * 2;
+
+                obXml.AppendLine("  </Wires>");
+                obXml.AppendLine("</FlgNet></NetworkSource>");
+                obXml.AppendLine("          <ProgrammingLanguage>FBD</ProgrammingLanguage>");
+                obXml.AppendLine("        </AttributeList>");
+                obXml.AppendLine("        <ObjectList>");
+                obXml.AppendLine($"          <MultilingualText ID=\"{multiTextId:X}\" CompositionName=\"Comment\">");
+                obXml.AppendLine("            <ObjectList>");
+                obXml.AppendLine($"              <MultilingualTextItem ID=\"{(multiTextId+1):X}\" CompositionName=\"Items\">");
+                obXml.AppendLine("                <AttributeList>");
+                obXml.AppendLine("                  <Culture>en-US</Culture>");
+                obXml.AppendLine($"                  <Text>Diagnostics for {safeName}</Text>");
+                obXml.AppendLine("                </AttributeList>");
+                obXml.AppendLine("              </MultilingualTextItem>");
+                obXml.AppendLine("            </ObjectList>");
+                obXml.AppendLine("          </MultilingualText>");
+                obXml.AppendLine($"          <MultilingualText ID=\"{(multiTextId+2):X}\" CompositionName=\"Title\">");
+                obXml.AppendLine("            <ObjectList>");
+                obXml.AppendLine($"              <MultilingualTextItem ID=\"{(multiTextId+3):X}\" CompositionName=\"Items\">");
+                obXml.AppendLine("                <AttributeList>");
+                obXml.AppendLine("                  <Culture>en-US</Culture>");
+                obXml.AppendLine($"                  <Text>Network {idx}: {mod.ModuleName}</Text>");
+                obXml.AppendLine("                </AttributeList>");
+                obXml.AppendLine("              </MultilingualTextItem>");
+                obXml.AppendLine("            </ObjectList>");
+                obXml.AppendLine("          </MultilingualText>");
+                obXml.AppendLine("        </ObjectList>");
+                obXml.AppendLine("      </SW.Blocks.CompileUnit>");
+
+                compileUnitId += 5; // Increment to prevent collisions in document
+                multiTextId += 5;
+
+                // Create instance DB (s7dcl) for each card
+                string instDb = $@"        {{
+           S7_Optimized := ""TRUE"";
+           S7_StandardRetain := ""FALSE"";
+           S7_Version := ""0.1""
+        }}
+    DATA_BLOCK Inst_{safeName} : ""1500Diag82""
+    END_DATA_BLOCK";
+                File.WriteAllText(Path.Combine(outDir, $"Inst_{safeName}.s7dcl"), instDb);
+
+                idx++;
+            }
+
+            // Final rung for ob82counter increment
+            obXml.AppendLine($"      <SW.Blocks.CompileUnit ID=\"{compileUnitId:X}\" CompositionName=\"CompileUnits\">");
+            obXml.AppendLine("        <AttributeList>");
+            obXml.AppendLine("          <NetworkSource><FlgNet xmlns=\"http://www.siemens.com/automation/Openness/SW/NetworkSource/FlgNet/v5\">");
+            obXml.AppendLine("  <Parts>");
+
+            // Access ob82counter tag
+            obXml.AppendLine($"    <Access Scope=\"GlobalVariable\" UId=\"{uidBase + 1}\">");
+            obXml.AppendLine("      <Symbol>");
+            obXml.AppendLine("        <Component Name=\"Tags\" />");
+            obXml.AppendLine("        <Component Name=\"ob82counter\" />");
+            obXml.AppendLine("      </Symbol>");
+            obXml.AppendLine("    </Access>");
+
+            obXml.AppendLine($"    <Access Scope=\"GlobalVariable\" UId=\"{uidBase + 2}\">");
+            obXml.AppendLine("      <Symbol>");
+            obXml.AppendLine("        <Component Name=\"Tags\" />");
+            obXml.AppendLine("        <Component Name=\"ob82counter\" />");
+            obXml.AppendLine("      </Symbol>");
+            obXml.AppendLine("    </Access>");
+
+            obXml.AppendLine($"    <Access Scope=\"LiteralConstant\" UId=\"{uidBase + 3}\">");
+            obXml.AppendLine("      <Constant>");
+            obXml.AppendLine("        <ConstantType>DInt</ConstantType>");
+            obXml.AppendLine("        <ConstantValue>1</ConstantValue>");
+            obXml.AppendLine("      </Constant>");
+            obXml.AppendLine("    </Access>");
+
+            obXml.AppendLine($"    <Part Name=\"Add\" UId=\"{uidBase + 4}\" DisabledENO=\"true\">");
+            obXml.AppendLine("      <TemplateValue Name=\"SrcType\" Type=\"Type\">DInt</TemplateValue>");
+            obXml.AppendLine("      <TemplateValue Name=\"Card\" Type=\"Cardinality\">2</TemplateValue>");
+            obXml.AppendLine("    </Part>");
+
+            obXml.AppendLine("  </Parts>");
+            obXml.AppendLine("  <Wires>");
+
+            obXml.AppendLine($"    <Wire UId=\"{uidBase + 5}\">");
+            obXml.AppendLine($"      <OpenCon UId=\"{uidBase + 6}\" />");
+            obXml.AppendLine($"      <NameCon UId=\"{uidBase + 4}\" Name=\"en\" />");
+            obXml.AppendLine("    </Wire>");
+
+            obXml.AppendLine($"    <Wire UId=\"{uidBase + 7}\">");
+            obXml.AppendLine($"      <IdentCon UId=\"{uidBase + 1}\" />");
+            obXml.AppendLine($"      <NameCon UId=\"{uidBase + 4}\" Name=\"in1\" />");
+            obXml.AppendLine("    </Wire>");
+
+            obXml.AppendLine($"    <Wire UId=\"{uidBase + 8}\">");
+            obXml.AppendLine($"      <IdentCon UId=\"{uidBase + 3}\" />");
+            obXml.AppendLine($"      <NameCon UId=\"{uidBase + 4}\" Name=\"in2\" />");
+            obXml.AppendLine("    </Wire>");
+
+            obXml.AppendLine($"    <Wire UId=\"{uidBase + 9}\">");
+            obXml.AppendLine($"      <NameCon UId=\"{uidBase + 4}\" Name=\"out\" />");
+            obXml.AppendLine($"      <IdentCon UId=\"{uidBase + 2}\" />");
+            obXml.AppendLine("    </Wire>");
+
+            obXml.AppendLine("  </Wires>");
+            obXml.AppendLine("</FlgNet></NetworkSource>");
+            obXml.AppendLine("          <ProgrammingLanguage>FBD</ProgrammingLanguage>");
+            obXml.AppendLine("        </AttributeList>");
+            obXml.AppendLine("        <ObjectList>");
+            obXml.AppendLine($"          <MultilingualText ID=\"{multiTextId:X}\" CompositionName=\"Comment\">");
+            obXml.AppendLine("            <ObjectList>");
+            obXml.AppendLine($"              <MultilingualTextItem ID=\"{(multiTextId+1):X}\" CompositionName=\"Items\">");
+            obXml.AppendLine("                <AttributeList>");
+            obXml.AppendLine("                  <Culture>en-US</Culture>");
+            obXml.AppendLine("                  <Text />");
+            obXml.AppendLine("                </AttributeList>");
+            obXml.AppendLine("              </MultilingualTextItem>");
+            obXml.AppendLine("            </ObjectList>");
+            obXml.AppendLine("          </MultilingualText>");
+            obXml.AppendLine($"          <MultilingualText ID=\"{(multiTextId+2):X}\" CompositionName=\"Title\">");
+            obXml.AppendLine("            <ObjectList>");
+            obXml.AppendLine($"              <MultilingualTextItem ID=\"{(multiTextId+3):X}\" CompositionName=\"Items\">");
+            obXml.AppendLine("                <AttributeList>");
+            obXml.AppendLine("                  <Culture>en-US</Culture>");
+            obXml.AppendLine($"                  <Text>Network {idx}: Error Counter</Text>");
+            obXml.AppendLine("                </AttributeList>");
+            obXml.AppendLine("              </MultilingualTextItem>");
+            obXml.AppendLine("            </ObjectList>");
+            obXml.AppendLine("          </MultilingualText>");
+            obXml.AppendLine("        </ObjectList>");
+            obXml.AppendLine("      </SW.Blocks.CompileUnit>");
+
+            obXml.AppendLine("    </ObjectList>");
+            obXml.AppendLine("  </SW.Blocks.OB>");
+            obXml.AppendLine("</Document>");
+
+            string ob82File = Path.Combine(outDir, "DiagnosticErrorInterrupt.xml");
+            File.WriteAllText(ob82File, obXml.ToString());
+
+            if (silentImport)
+            {
+                Log($"\n[IMPORT] Attempting silent import to {selectedStation}...");
+                PerformSilentImport(selectedStation, outDir);
+            }
+        }
+
+        private void PerformSilentImport(string plcName, string importDir)
+        {
+            try
+            {
+                if (project == null) return;
+
+                // Find the PLC
+                dynamic? targetPlc = null;
+                FindPlcByName(project.Devices, plcName, ref targetPlc);
+                if (targetPlc == null && project.DeviceGroups != null) FindPlcByNameInGroups(project.DeviceGroups!, plcName, ref targetPlc);
+                if (targetPlc == null && project.UngroupedDevicesGroup != null) FindPlcByName(project.UngroupedDevicesGroup!.Devices, plcName, ref targetPlc);
+
+                if (targetPlc != null)
+                {
+                    var plcSoftware = targetPlc.GetService("Siemens.Engineering.SW.PlcSoftware");
+                    if (plcSoftware != null)
+                    {
+                        var blockGroup = plcSoftware.BlockGroup;
+                        if (blockGroup != null)
+                        {
+                            string ob82File = Path.Combine(importDir, "DiagnosticErrorInterrupt.xml");
+                            if (File.Exists(ob82File))
+                            {
+                                try
+                                {
+                                    // ImportOptions: Override
+                                    blockGroup.Blocks.Import(new FileInfo(ob82File), Siemens.Engineering.ImportOptions.Override);
+                                    Log("  -> Imported DiagnosticErrorInterrupt.xml successfully.");
+                                }
+                                catch (Exception ex)
+                                {
+                                    Log($"  -> Failed to import OB82: {ex.Message}");
+                                }
+                            }
+                            else
+                            {
+                                Log("  -> DiagnosticErrorInterrupt.xml not found for import.");
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    Log($"[IMPORT] Could not locate PLC software container for {plcName}.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"[IMPORT ERROR] {ex.Message}");
+            }
+        }
+
+        private void FindPlcByName(dynamic devices, string targetName, ref dynamic? foundPlc)
+        {
+            if (devices == null || foundPlc != null) return;
+            foreach (dynamic device in devices)
+            {
+                string plcName = GetPlcName(device.DeviceItems, device.Name.ToString(), out bool isPlc);
+                if (isPlc && plcName == targetName)
+                {
+                    // Return the specific device item that is the PLC container
+                    foundPlc = GetPlcItem(device.DeviceItems);
+                    return;
+                }
+            }
+        }
+
+        private void FindPlcByNameInGroups(dynamic groups, string targetName, ref dynamic? foundPlc)
+        {
+            if (groups == null || foundPlc != null) return;
+            foreach (dynamic group in groups)
+            {
+                FindPlcByName(group.Devices, targetName, ref foundPlc);
+                if (group.Groups != null) FindPlcByNameInGroups(group.Groups, targetName, ref foundPlc);
+            }
+        }
+
+        private dynamic? GetPlcItem(dynamic deviceItems)
+        {
+            if (deviceItems == null) return null;
+            foreach (dynamic item in deviceItems)
+            {
+                try
+                {
+                    var plcContainer = item.GetService("Siemens.Engineering.SW.PlcSoftware");
+                    if (plcContainer != null) return item;
+                }
+                catch { }
+
+                try
+                {
+                    if (item.DeviceItems != null)
+                    {
+                        dynamic? child = GetPlcItem(item.DeviceItems);
+                        if (child != null) return child;
+                    }
+                }
+                catch { }
+            }
+            return null;
         }
 
         private async void BtnConnect_Click(object? sender, EventArgs e)
@@ -63,6 +600,12 @@ namespace TiaDiagnosticGui
             txtOutput.Clear();
             csvReportData.Clear();
             csvReportData.Add("Station,Item,Type,Location,Attribute,Value");
+            diagnosticModules.Clear();
+            cmbPlcSelect.Items.Clear();
+            if (ioSystemToPlc == null) ioSystemToPlc = new Dictionary<string, string>();
+            ioSystemToPlc.Clear();
+            if (plcHardwareConstants == null) plcHardwareConstants = new Dictionary<string, Dictionary<string, string>>();
+            plcHardwareConstants.Clear();
 
             btnConnect.Enabled = false;
             Log("Initializing TIA Portal connection on background thread...");
@@ -71,6 +614,20 @@ namespace TiaDiagnosticGui
 
             btnDisconnect.Enabled = (tiaPortal != null);
             btnExportCsv.Enabled = (csvReportData.Count > 1);
+
+            if (diagnosticModules.Count > 0)
+            {
+                HashSet<string> uniquePlcs = new HashSet<string>();
+                foreach (var m in diagnosticModules) uniquePlcs.Add(m.StationName);
+
+                foreach (var plc in uniquePlcs) cmbPlcSelect.Items.Add(plc);
+
+                if (cmbPlcSelect.Items.Count > 0) cmbPlcSelect.SelectedIndex = 0;
+
+                cmbPlcSelect.Enabled = true;
+                btnGenerateScl.Enabled = true;
+            }
+
             btnConnect.Enabled = (tiaPortal == null);
         }
 
@@ -90,11 +647,47 @@ namespace TiaDiagnosticGui
 
                 Log($"Connected to: {project.Name}");
 
-                foreach (dynamic device in project.Devices) WalkDevice(device);
-                ScanGroupsRecursive(project.DeviceGroups);
+                Log("\n--- PASS 1: Discovering PLCs and probing local IO ---");
+                var plcs = new List<dynamic>();
+
+                // Find all PLCs
+                FindPlcs(project.Devices, plcs);
+                FindPlcsInGroups(project.DeviceGroups!, plcs);
                 if (project.UngroupedDevicesGroup != null)
                 {
-                    foreach (dynamic device in project.UngroupedDevicesGroup.Devices) WalkDevice(device);
+                    FindPlcs(project.UngroupedDevicesGroup!.Devices, plcs);
+                }
+
+                // First, iterate all PLCs to build their mapping databases
+                foreach (dynamic plc in plcs)
+                {
+                    string plcName = GetPlcName(plc.DeviceItems, plc.Name.ToString(), out bool isPlc);
+                    MapIoSystemsRecursive(plc.DeviceItems, plcName);
+
+                    if (!plcHardwareConstants.ContainsKey(plcName))
+                    {
+                        plcHardwareConstants[plcName] = new Dictionary<string, string>();
+                    }
+                    BuildSystemConstantsMap(plc.DeviceItems, plcName);
+                }
+
+                // Probe local IO for each PLC
+                foreach (dynamic plc in plcs)
+                {
+                    string plcName = GetPlcName(plc.DeviceItems, plc.Name.ToString(), out bool isPlc);
+                    Log($"\n>>> LOCAL STATION: {plcName}");
+                    RecursiveWalk(plc.DeviceItems, plcName);
+                }
+
+                Log("\n--- PASS 2: Discovering and probing Distributed IO ---");
+
+                // Now iterate all devices again, but ONLY look at remote stations.
+                // We do this by scanning all devices globally and skipping the PLCs.
+                WalkRemoteStations(project.Devices);
+                WalkRemoteStationsInGroups(project.DeviceGroups!);
+                if (project.UngroupedDevicesGroup != null)
+                {
+                    WalkRemoteStations(project.UngroupedDevicesGroup!.Devices);
                 }
 
                 Log("\n[SCAN] Completed successfully.");
@@ -102,6 +695,225 @@ namespace TiaDiagnosticGui
             catch (Exception ex)
             {
                 Log($"Critical Error: {ex.Message}");
+            }
+        }
+
+        private void FindPlcs(dynamic devices, List<dynamic> plcs)
+        {
+            if (devices == null) return;
+            foreach (dynamic device in devices)
+            {
+                GetPlcName(device.DeviceItems, device.Name.ToString(), out bool isPlc);
+                if (isPlc)
+                {
+                    plcs.Add(device);
+                }
+            }
+        }
+
+        private void FindPlcsInGroups(dynamic groups, List<dynamic> plcs)
+        {
+            if (groups == null) return;
+            foreach (dynamic group in groups)
+            {
+                FindPlcs(group.Devices, plcs);
+                if (group.Groups != null) FindPlcsInGroups(group.Groups, plcs);
+            }
+        }
+
+        private void WalkRemoteStations(dynamic devices)
+        {
+            if (devices == null) return;
+            foreach (dynamic device in devices)
+            {
+                string stationName = "Unknown";
+                try { stationName = device.Name.ToString(); } catch { }
+
+                // Ensure this isn't a PLC we already processed
+                string plcName = GetPlcName(device.DeviceItems, stationName, out bool isPlc);
+                if (!isPlc)
+                {
+                    string controllingPlcName = ResolveControllingPlc(device.DeviceItems, plcName);
+
+                    if (controllingPlcName == plcName)
+                    {
+                        Log($"\n>>> UNASSIGNED/REMOTE STATION: {stationName}");
+                    }
+                    else
+                    {
+                        Log($"\n>>> DISTRIBUTED IO: {stationName} (Owner: {controllingPlcName})");
+                    }
+                    RecursiveWalk(device.DeviceItems, controllingPlcName);
+                }
+            }
+        }
+
+        private void WalkRemoteStationsInGroups(dynamic groups)
+        {
+            if (groups == null) return;
+            foreach (dynamic group in groups)
+            {
+                WalkRemoteStations(group.Devices);
+                if (group.Groups != null) WalkRemoteStationsInGroups(group.Groups);
+            }
+        }
+
+        private string GetPlcName(dynamic deviceItems, string defaultName, out bool foundRealPlc)
+        {
+            foundRealPlc = false;
+            if (deviceItems == null) return defaultName;
+            foreach (dynamic item in deviceItems)
+            {
+                if (item != null)
+                {
+                    bool isPlc = false;
+                    try
+                    {
+                        string classification = item.Classification.ToString();
+                        if (classification.IndexOf("CPU", StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            isPlc = true;
+                        }
+                    }
+                    catch { }
+
+                    if (!isPlc)
+                    {
+                        try
+                        {
+                            var swContainer = item.GetService("Siemens.Engineering.SW.SoftwareContainer");
+                            if (swContainer != null)
+                            {
+                                isPlc = true;
+                            }
+                        }
+                        catch { }
+                    }
+
+                    if (!isPlc)
+                    {
+                        try
+                        {
+                            var plcContainer = item.GetService("Siemens.Engineering.SW.PlcSoftware");
+                            if (plcContainer != null)
+                            {
+                                isPlc = true;
+                            }
+                        }
+                        catch { }
+                    }
+
+                    if (isPlc)
+                    {
+                        foundRealPlc = true;
+                        try { return item.Name.ToString(); } catch { }
+                    }
+
+                    try
+                    {
+                        if (item.DeviceItems != null)
+                        {
+                            string subResult = GetPlcName(item.DeviceItems, defaultName, out bool childFound);
+                            if (childFound)
+                            {
+                                foundRealPlc = true;
+                                return subResult;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+            return defaultName;
+        }
+
+        private void BuildIoSystemMap(dynamic device)
+        {
+            if (device == null) return;
+            string deviceName = "Unknown";
+            try { deviceName = device.Name.ToString(); } catch { }
+
+            // Try to find the actual PLC name within the station
+            string plcName = GetPlcName(device.DeviceItems, deviceName, out bool isRealPlc);
+
+            if (!isRealPlc) return; // If this station isn't a PLC (e.g. it's just remote IO), don't map it as an owner.
+
+            // Note: deviceName is the top level container, plcName is the specific CPU inside it.
+            // When mapping IO systems, we want them mapped to the specific PLC name.
+            MapIoSystemsRecursive(device.DeviceItems, plcName);
+        }
+
+        private void BuildIoSystemMapForGroups(dynamic groups)
+        {
+            if (groups == null) return;
+            foreach (dynamic group in groups)
+            {
+                foreach (dynamic device in group.Devices) BuildIoSystemMap(device);
+                if (group.Groups != null) BuildIoSystemMapForGroups(group.Groups);
+            }
+        }
+
+        private void MapIoSystemsRecursive(dynamic items, string deviceName)
+        {
+            if (items == null) return;
+            foreach (dynamic item in items)
+            {
+                if (item != null)
+                {
+                    try
+                    {
+                        var networkInterface = item.GetService("Siemens.Engineering.Hw.Features.NetworkInterface");
+                        if (networkInterface != null)
+                        {
+                            var ioControllers = networkInterface.IoControllers;
+                            if (ioControllers != null)
+                            {
+                                foreach (var controller in ioControllers)
+                                {
+                                    var ioSystem = controller.IoSystem;
+                                    if (ioSystem != null)
+                                    {
+                                        string ioSystemName = ioSystem.Name.ToString();
+                                        if (!ioSystemToPlc.ContainsKey(ioSystemName))
+                                        {
+                                            ioSystemToPlc[ioSystemName] = deviceName;
+                                            Log($"[MAP] IO System '{ioSystemName}' -> PLC '{deviceName}'");
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Handle Profibus DP Masters as well, if applicable
+                            try
+                            {
+                                var dpMasters = networkInterface.DpMasters;
+                                if (dpMasters != null)
+                                {
+                                    foreach (var master in dpMasters)
+                                    {
+                                        var dpSystem = master.DpSystem;
+                                        if (dpSystem != null)
+                                        {
+                                            string dpSystemName = dpSystem.Name.ToString();
+                                            if (!ioSystemToPlc.ContainsKey(dpSystemName))
+                                            {
+                                                ioSystemToPlc[dpSystemName] = deviceName;
+                                                Log($"[MAP] DP System '{dpSystemName}' -> PLC '{deviceName}'");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
+
+                    if (item.DeviceItems != null)
+                    {
+                        MapIoSystemsRecursive(item.DeviceItems, deviceName);
+                    }
+                }
             }
         }
 
@@ -120,8 +932,92 @@ namespace TiaDiagnosticGui
             string stationName = "Unknown";
             try { stationName = device.Name.ToString(); } catch { }
 
-            Log($"\n>>> STATION: {stationName}");
-            RecursiveWalk(device.DeviceItems, stationName);
+            // Try to find the actual PLC name within the station first
+            string plcName = GetPlcName(device.DeviceItems, stationName, out bool isRealPlc);
+
+            // Override stationName if this device is part of a mapped IO System
+            string controllingPlcName = ResolveControllingPlc(device.DeviceItems, plcName);
+
+            // Important: we use the controllingPlcName (which defaults to the actual PLC name if not remote IO)
+            // However, we only log and walk it if it has a real controlling PLC (or is one)
+            if (!isRealPlc && controllingPlcName == plcName)
+            {
+                // It's a remote station but we didn't resolve an owner for it.
+                // It might not be assigned. We'll still walk it, but we might want to log it differently.
+                Log($"\n>>> UNASSIGNED STATION: {stationName}");
+            }
+            else
+            {
+                Log($"\n>>> STATION: {controllingPlcName}");
+            }
+
+            RecursiveWalk(device.DeviceItems, controllingPlcName);
+        }
+
+
+        private string ResolveControllingPlc(dynamic items, string defaultName)
+        {
+            if (items == null) return defaultName;
+
+            foreach (dynamic item in items)
+            {
+                if (item != null)
+                {
+                    try
+                    {
+                        var networkInterface = item.GetService("Siemens.Engineering.Hw.Features.NetworkInterface");
+                        if (networkInterface != null)
+                        {
+                            var ioConnectors = networkInterface.IoConnectors;
+                            if (ioConnectors != null)
+                            {
+                                foreach (var connector in ioConnectors)
+                                {
+                                    var ioSystem = connector.ConnectedToIoSystem;
+                                    if (ioSystem != null)
+                                    {
+                                        string ioSystemName = ioSystem.Name.ToString();
+                                        if (ioSystemToPlc.ContainsKey(ioSystemName))
+                                        {
+                                            return ioSystemToPlc[ioSystemName]; // Return the controlling PLC
+                                        }
+                                    }
+                                }
+                            }
+
+                            try
+                            {
+                                var dpSlaves = networkInterface.DpSlaves;
+                                if (dpSlaves != null)
+                                {
+                                    foreach (var slave in dpSlaves)
+                                    {
+                                        var dpSystem = slave.ConnectedToDpSystem;
+                                        if (dpSystem != null)
+                                        {
+                                            string dpSystemName = dpSystem.Name.ToString();
+                                            if (ioSystemToPlc.ContainsKey(dpSystemName))
+                                            {
+                                                return ioSystemToPlc[dpSystemName];
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
+
+                    if (item.DeviceItems != null)
+                    {
+                        string subResult = ResolveControllingPlc(item.DeviceItems, defaultName);
+                        if (subResult != defaultName) return subResult; // Found a map match deeper down
+                    }
+                }
+            }
+
+            return defaultName;
         }
 
         private void RecursiveWalk(dynamic items, string stationName)
@@ -142,18 +1038,146 @@ namespace TiaDiagnosticGui
             }
         }
 
+        private void BuildSystemConstantsMap(dynamic items, string plcName)
+        {
+            if (items == null) return;
+            foreach (dynamic item in items)
+            {
+                if (item != null)
+                {
+                    try
+                    {
+                        var systemConstants = item.GetService("Siemens.Engineering.Hw.Features.SystemConstantsProvider");
+                        if (systemConstants != null)
+                        {
+                            foreach (var constant in systemConstants.SystemConstants)
+                            {
+                                string constType = constant.DataType.ToString();
+                                if (constType.StartsWith("HW_"))
+                                {
+                                    string id = constant.Value.ToString();
+                                    string name = constant.Name.ToString();
+                                    // Prefer HW_SubModule or HW_Device if ID already exists
+                                    if (!plcHardwareConstants[plcName].ContainsKey(id) ||
+                                        constType.Equals("HW_SubModule", StringComparison.OrdinalIgnoreCase) ||
+                                        constType.Equals("HW_Device", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        plcHardwareConstants[plcName][id] = name;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+
+                    if (item.DeviceItems != null)
+                    {
+                        BuildSystemConstantsMap(item.DeviceItems, plcName);
+                    }
+                }
+            }
+        }
+
+        private string ExtractRawHardwareIdentifier(dynamic item)
+        {
+            if (item == null) return "0";
+
+            // Strategy 1: Dedicated HwIdentifiers list
+            try
+            {
+                dynamic identifiers = item.HwIdentifiers;
+                if (identifiers != null)
+                {
+                    foreach (dynamic id in identifiers)
+                    {
+                        if (id != null)
+                        {
+                            try
+                            {
+                                string val = id.GetAttribute("Identifier").ToString();
+                                if (!string.IsNullOrEmpty(val) && val != "0") return val;
+                            }
+                            catch { }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            // Strategy 2: Direct Attribute
+            try
+            {
+                var attrs = item.GetAttributeInfos();
+                if (attrs != null)
+                {
+                    foreach (var attr in attrs)
+                    {
+                        if (attr.Name.ToString().Equals("HardwareIdentifier", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string val = item.GetAttribute("HardwareIdentifier").ToString();
+                            if (!string.IsNullOrEmpty(val) && val != "0") return val;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            // Strategy 3: Child lookup
+            try
+            {
+                dynamic subItems = item.DeviceItems;
+                if (subItems != null)
+                {
+                    foreach (dynamic subItem in subItems)
+                    {
+                        string val = ExtractRawHardwareIdentifier(subItem);
+                        if (!string.IsNullOrEmpty(val) && val != "0") return val;
+                    }
+                }
+            }
+            catch { }
+
+            return "0";
+        }
+
         private void ProbeAllDiagnostics(dynamic item, string stationName)
         {
             string itemName = "Unknown";
             string typeId = "Unknown";
+            string hwId = "0";
+            string hwConstName = "";
+
             try { itemName = item.Name.ToString(); } catch { }
             try { typeId = item.TypeIdentifier.ToString(); } catch { }
+
+            // Filter out non-IO components from generating instances
+            string itemNameLower = itemName.ToLower();
+            if (itemNameLower.Contains("server module") ||
+                itemNameLower.Contains("profinet interface") ||
+                itemNameLower.Contains("card reader/writer") ||
+                itemNameLower.Contains("cpu ") ||
+                itemName.Equals(stationName, StringComparison.OrdinalIgnoreCase) ||
+                (typeId != null && typeId.ToLower().Contains("cpu")))
+            {
+                return; // Exclude
+            }
+
+            // Extract the raw integer hardware identifier
+            hwId = ExtractRawHardwareIdentifier(item);
+
+            // Look up the symbolic name from the controlling PLC's constant mapping
+            if (plcHardwareConstants.ContainsKey(stationName) && plcHardwareConstants[stationName].ContainsKey(hwId))
+            {
+                hwConstName = plcHardwareConstants[stationName][hwId];
+            }
 
             // Keywords we are looking for in the attribute names
             string[] keywords = { "diag", "valuestatus", "wirebreak", "shortcircuit", "overflow", "underflow", "nosupplyvoltage" };
             
             // Track seen attributes to prevent duplicate logging if multiple methods find the same data
             HashSet<string> seenAttrs = new HashSet<string>();
+            bool hasDiagnostics = false;
+            int maxChannelCount = 0;
 
             // Universal Attribute Extractor Method
             Action<dynamic, string, string> checkAndLogAttrs = (targetObj, logPrefix, location) =>
@@ -184,6 +1208,26 @@ namespace TiaDiagnosticGui
                                     object val = targetObj.GetAttribute(attr.Name);
                                     if (val != null)
                                     {
+                                        hasDiagnostics = true;
+
+                                        // Update channel count based on location string
+                                        if (location.StartsWith("Ch_"))
+                                        {
+                                            if (int.TryParse(location.Substring(3), out int chIdx))
+                                            {
+                                                maxChannelCount = Math.Max(maxChannelCount, chIdx + 1);
+                                            }
+                                        }
+                                        else if (location == "Module" && maxChannelCount == 0)
+                                        {
+                                            // Fallback for ST modules that don't have explicit channel properties
+                                            // but might have diagnostic capabilities.
+                                            // We default to 1 channel if we don't know the channel count,
+                                            // or we try to derive it from the name if possible.
+                                            // A better way is to find a channel count property, but if not:
+                                            maxChannelCount = 1;
+                                        }
+
                                         string uniqueKey = $"{location}_{attr.Name}";
                                         if (!seenAttrs.Contains(uniqueKey))
                                         {
@@ -219,16 +1263,29 @@ namespace TiaDiagnosticGui
             // METHOD 2: Native 'Channels' Property
             // Catches ET200SP High Feature (HF) sub-nodes
             // =================================================================
+            bool isHighFeature = false;
             try
             {
                 dynamic channels = item.Channels;
                 if (channels != null)
                 {
+                    isHighFeature = true;
                     int idx = 0;
-                    foreach (dynamic ch in channels)
+                    // Use exception-based smart probing to count actual channels
+                    // since looping through all possible channels causes massive lag
+                    for (int i = 0; i < 64; i++) // Arbitrary max
                     {
-                        checkAndLogAttrs(ch, "CH-PROP-DIAG", $"Ch_{idx}");
-                        idx++;
+                        try
+                        {
+                            dynamic ch = channels[i];
+                            checkAndLogAttrs(ch, "CH-PROP-DIAG", $"Ch_{i}");
+                            idx++;
+                            maxChannelCount = Math.Max(maxChannelCount, idx);
+                        }
+                        catch
+                        {
+                            break; // Exception thrown -> no more channels
+                        }
                     }
                 }
             }
@@ -243,19 +1300,68 @@ namespace TiaDiagnosticGui
                 dynamic provider = item.GetService("Siemens.Engineering.Hw.Features.ChannelProvider");
                 if (provider != null)
                 {
+                    isHighFeature = true;
                     dynamic svcChannels = provider.Channels;
                     if (svcChannels != null)
                     {
                         int idx = 0;
-                        foreach (dynamic ch in svcChannels)
+                        for (int i = 0; i < 64; i++) // Arbitrary max
                         {
-                            checkAndLogAttrs(ch, "CH-SVC-DIAG", $"Ch_{idx}");
-                            idx++;
+                            try
+                            {
+                                dynamic ch = svcChannels[i];
+                                checkAndLogAttrs(ch, "CH-SVC-DIAG", $"Ch_{i}");
+                                idx++;
+                                maxChannelCount = Math.Max(maxChannelCount, idx);
+                            }
+                            catch
+                            {
+                                break; // Exception thrown -> no more channels
+                            }
                         }
                     }
                 }
             }
             catch { }
+
+            // Add to cache if the module has a valid hardware ID, regardless of discovered diagnostic attributes.
+            // The user requested ALL IO cards on the system to be included in the OB82 interrupt block.
+            if (hwId != "0")
+            {
+                // Ensure at least 1 channel
+                if (maxChannelCount == 0) maxChannelCount = 1;
+
+                lock (diagnosticModules)
+                {
+                    // Avoid duplicates
+                    bool exists = false;
+                    foreach (var mod in diagnosticModules)
+                    {
+                        if (mod.ModuleName == itemName && mod.HardwareIdentifier == hwId)
+                        {
+                            exists = true;
+                            // Update max channels if this pass found more
+                            mod.ChannelCount = Math.Max(mod.ChannelCount, maxChannelCount);
+                            break;
+                        }
+                    }
+
+                    if (!exists)
+                    {
+                        diagnosticModules.Add(new DiagnosticModuleInfo
+                        {
+                            StationName = stationName,
+                            ModuleName = itemName,
+                            HardwareIdentifier = hwId,
+                            HardwareConstantName = hwConstName,
+                            ChannelCount = maxChannelCount,
+                            IsHighFeature = isHighFeature
+                        });
+                        string logHwStr = string.IsNullOrEmpty(hwConstName) ? hwId : $"{hwConstName} ({hwId})";
+                        Log($"[CACHE] Cached module '{itemName}' (HW_IO: {logHwStr}, Channels: {maxChannelCount}, HF: {isHighFeature}) for SCL generation.");
+                    }
+                }
+            }
         }
 
         private void BtnExportCsv_Click(object? sender, EventArgs e)
