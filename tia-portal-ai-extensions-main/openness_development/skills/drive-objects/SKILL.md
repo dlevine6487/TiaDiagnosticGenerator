@@ -377,7 +377,7 @@ if (driveObject.Parameters.Find(paramName) is null)
 - [`parameters`](../parameters/SKILL.md) — parameter access and BiCo wiring through DriveObject.Parameters
 - [`safety-commissioning`](../safety-commissioning/SKILL.md) — safety configuration via DriveFunctionInterface.SafetyCommissioning
 - [`telegrams`](../telegrams/SKILL.md) — telegram management on DriveObject.Telegrams
-- [`networks-and-drivecliq`](../networks-and-drivecliq/SKILL.md) — DriveCliq topology and network port management
+- [`networks-and-drivecliq`](../networks-and-drivecliq/SKILL.md) — DRIVE-CLiQ topology and network port management
 
 ---
 

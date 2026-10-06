@@ -91,7 +91,7 @@ Where `<MLFB>` is the Siemens material number (e.g., `6SL3120-1TE15-0Axx`) and `
 | Domain | Required DLLs |
 |--------|------|
 | Base / Session / Engineering Objects | `Siemens.Engineering.Base` |
-| Step7 (PLC blocks, tags, devices) | `Siemens.Engineering.Base`, `Siemens.Engineering.Step7` |
+| STEP 7 (PLC blocks, tags, devices) | `Siemens.Engineering.Base`, `Siemens.Engineering.Step7` |
 | Startdrive (SINAMICS drives) | `Siemens.Engineering.Base`, `Siemens.Engineering.Step7`, `Siemens.Engineering.Startdrive` |
 | DCC (Drive Control Charts) | `Siemens.Engineering.Base`, `Siemens.Engineering.DCC`, `Siemens.Engineering.Startdrive` |
 | Safety | `Siemens.Engineering.Base`, `Siemens.Engineering.Step7`, `Siemens.Engineering.Safety` |

@@ -143,7 +143,7 @@ empirical findings or operations that still require live verification.
 | [`hardware-and-modules`](skills/hardware-and-modules/SKILL.md) | Motors, encoders, hardware catalog search, insertion, and type changes |
 | [`parameters`](skills/parameters/SKILL.md) | Drive parameters, indexed values, bits, and BiCo wiring |
 | [`telegrams`](skills/telegrams/SKILL.md) | Main, safety, additional, and supplementary telegram configuration |
-| [`networks-and-drivecliq`](skills/networks-and-drivecliq/SKILL.md) | PROFINET and DriveCliq port connections |
+| [`networks-and-drivecliq`](skills/networks-and-drivecliq/SKILL.md) | PROFINET and DRIVE-CLiQ port connections |
 | [`safety-commissioning`](skills/safety-commissioning/SKILL.md) | SINAMICS safety functions, checksums, and acceptance tests |
 
 ### DCC

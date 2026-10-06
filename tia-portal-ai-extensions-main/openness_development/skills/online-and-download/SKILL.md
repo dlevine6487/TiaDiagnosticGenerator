@@ -13,7 +13,7 @@ Online and download operations enable communication between the engineering stat
 
 | Device Type | Provider Location |
 |---|---|
-| **Step 7 PLC** | `OnlineProvider` and `DownloadProvider` are services on the **CPU** (`DeviceItemClassifications.CPU`) |
+| **STEP 7 PLC** | `OnlineProvider` and `DownloadProvider` are services on the **CPU** (`DeviceItemClassifications.CPU`) |
 | **StartDrive** | `OnlineProvider` and `DownloadProvider` are services on the **headmodule** of the Device (`DeviceItemClassifications.HM`) |
 
 When the device type is not known in advance, auto-detect by first checking for a headmodule (`HM`), then falling back to a CPU (`CPU`).
@@ -41,7 +41,7 @@ using System.Security;
 
 ### Get Provider with Auto-Detection
 
-**Description:** When the device type is not known in advance, auto-detect the provider object by checking for a headmodule (`HM`, StartDrive) first, then falling back to a CPU (`CPU`, Step 7 PLC).
+**Description:** When the device type is not known in advance, auto-detect the provider object by checking for a headmodule (`HM`, StartDrive) first, then falling back to a CPU (`CPU`, STEP 7 PLC).
 
 **Example (auto-detect):**
 
@@ -60,7 +60,7 @@ var onlineProvider = providerObject.GetService<OnlineProvider>();
 var downloadProvider = providerObject.GetService<DownloadProvider>();
 ```
 
-**Example (explicit, Step 7 PLC):**
+**Example (explicit, STEP 7 PLC):**
 
 ```csharp
 var onlineProvider = cpu.GetService<OnlineProvider>();
@@ -77,7 +77,7 @@ var downloadProvider = headmodule.GetService<DownloadProvider>();
 
 **Key Types and Methods:**
 - `DeviceItemClassifications.HM` — classification for headmodule (StartDrive)
-- `DeviceItemClassifications.CPU` — classification for CPU (Step 7 PLC)
+- `DeviceItemClassifications.CPU` — classification for CPU (STEP 7 PLC)
 - `device.Items` — collection of all items in the device
 
 ### Common Target Configuration
@@ -123,7 +123,7 @@ while (onlineProvider.State != OnlineState.Online)
 ```
 
 **Key Types and Methods:**
-- `OnlineProvider` — service for online connection operations (HM on StartDrive, CPU on Step 7)
+- `OnlineProvider` — service for online connection operations (HM on StartDrive, CPU on STEP 7)
 - `OnlineConfiguration.ApplyConfiguration(ConfigurationTargetInterface)` — applies the selected configuration
 - `OnlineProvider.GoOnline()` — initiates the online connection (returns immediately, not when complete)
 - `OnlineProvider.GoOffline()` — disconnects from the device
@@ -161,7 +161,7 @@ freshProvider.Download(targetConfiguration, ...); // silently uses default inter
 ```
 
 **Key Types and Methods:**
-- `DownloadProvider` — service for download operations (HM on StartDrive, CPU on Step 7)
+- `DownloadProvider` — service for download operations (HM on StartDrive, CPU on STEP 7)
 - `DownloadProvider.Download(ConfigurationTargetInterface, ..., DownloadOptions)` — executes the download
 - `DownloadPasswordConfiguration.SetPassword(SecureString)` — sets the download password
 - `DownloadOptions.SoftwareOnlyChanges` — flag to download only software changes
@@ -222,14 +222,14 @@ uploadProvider.ParameterUpload(targetConfiguration, null, _ => { });
 - `ParameterUploadProvider.ParameterUpload(ConfigurationTargetInterface, ...)` — uploads parameters from device to project
 - Namespace: `Siemens.Engineering.Upload`
 
-**Note:** `ParameterUploadProvider` returns `null` on CPU (Step 7 PLC) device items. Always null-check before use.
+**Note:** `ParameterUploadProvider` returns `null` on CPU (STEP 7 PLC) device items. Always null-check before use.
 
 ## Quick Reference
 
 | Method/Pattern | Purpose |
 |---|---|
 | `device.Items.FirstOrDefault(x => x.Classification == DeviceItemClassifications.HM)` | Find headmodule (StartDrive) |
-| `device.Items.FirstOrDefault(x => x.Classification == DeviceItemClassifications.CPU)` | Find CPU (Step 7 PLC) |
+| `device.Items.FirstOrDefault(x => x.Classification == DeviceItemClassifications.CPU)` | Find CPU (STEP 7 PLC) |
 | `providerObject.GetService<OnlineProvider>()` | Get online provider from HM or CPU |
 | `providerObject.GetService<DownloadProvider>()` | Get download provider from HM or CPU (cache instance!) |
 | `headmodule.GetService<ParameterUploadProvider>()` | Get upload provider (StartDrive HM only) |
