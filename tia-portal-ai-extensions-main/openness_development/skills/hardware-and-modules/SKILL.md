@@ -99,7 +99,7 @@ When plugging hardware into StartDrive (SINAMICS) devices, the correct parent ob
 | **Infeeds** (Active/Basic/Smart Line Module) | Device | 65535 | Plugged directly to the S120 Device |
 | **Terminal Boards (TB30)** | Device | 65535 | Plugged directly to the S120 Device |
 | **Terminal Modules (TM15, TM31, TM41, TM120, TM150)** | Device | 65535 | Plugged directly to the S120 Device |
-| **DriveCliq Hubs** | Device | 65535 | Plugged directly to the S120 Device |
+| **DRIVE-CLiQ Hubs** | Device | 65535 | Plugged directly to the S120 Device |
 | **Voltage Sensing Modules (VSM)** | DeviceItem of Infeeds | 65535 | **Warning:** `PlugNew` returns a DeviceItem one layer below the created module. To plug further children, get `.Parent` first |
 | **Motors** | The axis's own rack `DeviceItem` (`TypeIdentifier` starts with `System:Rack`) | 65535 | Plug onto the axis rack, not onto the nested motor-module item |
 | **Encoders** | Auto-created when the motor is plugged (for DRIVE-CLiQ motor families that expose integrated encoder items) | N/A | No separate encoder `PlugNew` call is needed for those motor families |
@@ -212,11 +212,11 @@ If a property access throws `RuntimeBinderException`/`MissingMemberException` or
 
 ### Auto-slot convention: pass `65535` to let TIA Portal pick the first free slot
 
-**Description:** Most `PlugNew(typeIdentifier, name, slot)` calls onto a SINAMICS device (motor modules, infeeds, terminal boards, terminal modules, DriveCliq hubs, motors, encoders) accept the sentinel slot value **`65535`**, which tells TIA Portal to auto-select the first free slot rather than requiring the caller to know or compute an exact slot number. This convention is not self-evident from the API surface and is easy to miss without prior TIA Portal GUI knowledge — see the hierarchy table below for the (rare) explicit-slot exceptions such as CBE20 (slot `3`).
+**Description:** Most `PlugNew(typeIdentifier, name, slot)` calls onto a SINAMICS device (motor modules, infeeds, terminal boards, terminal modules, DRIVE-CLiQ hubs, motors, encoders) accept the sentinel slot value **`65535`**, which tells TIA Portal to auto-select the first free slot rather than requiring the caller to know or compute an exact slot number. This convention is not self-evident from the API surface and is easy to miss without prior TIA Portal GUI knowledge — see the hierarchy table below for the (rare) explicit-slot exceptions such as CBE20 (slot `3`).
 
-### HardwareCatalog Find + Filter for DriveCliq Motors
+### HardwareCatalog Find + Filter for DRIVE-CLiQ Motors
 
-**Description:** Find catalog entries matching a keyword, then filter by `CatalogPath` for sub-category refinement (e.g., DriveCliq motors).
+**Description:** Find catalog entries matching a keyword, then filter by `CatalogPath` for sub-category refinement (e.g., DRIVE-CLiQ motors).
 
 **Example:**
 

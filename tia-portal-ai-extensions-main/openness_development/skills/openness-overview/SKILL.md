@@ -40,7 +40,7 @@ This skill answers **discovery/meta questions** about the TIA Portal Openness pl
 |---|---|
 | `devices-and-hardware` | Creating devices, finding CPUs, PROFINET subnets, I/O systems, and network interfaces |
 | `hardware-and-modules` | Plugging hardware, changing module types, hardware catalog search, motor/encoder projecting, master copies (drives) |
-| `networks-and-drivecliq` | Connecting/disconnecting DriveCliq ports, PROFINET interfaces, discovering I/O system topology |
+| `networks-and-drivecliq` | Connecting/disconnecting DRIVE-CLiQ ports, PROFINET interfaces, discovering I/O system topology |
 | `online-and-download` | Connecting to CPUs via `OnlineProvider`, downloading PLC software, connection modes, passwords |
 
 ### PLC Program

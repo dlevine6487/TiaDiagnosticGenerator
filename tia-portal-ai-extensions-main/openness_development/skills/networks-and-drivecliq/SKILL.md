@@ -1,15 +1,15 @@
 ---
 name: networks-and-drivecliq
-description: Network and DriveCliq configuration for SINAMICS drives. Use when connecting/disconnecting DriveCliq ports, configuring PROFINET interfaces, and discovering IO system topology.
+description: Network and DRIVE-CLiQ configuration for SINAMICS drives. Use when connecting/disconnecting DRIVE-CLiQ ports, configuring PROFINET interfaces, and discovering IO system topology.
 metadata:
   siemens-depends-on: "openness-base, devices-and-hardware, hardware-and-modules"
 ---
 
-# Networks and DriveCliq
+# Networks and DRIVE-CLiQ
 
 ## Overview
 
-Network configuration in TIA Portal Openness covers DriveCliq topology wiring, PROFINET interface configuration, and IO system traversal. Use `NetworkPort` services to connect and disconnect DriveCliq links between devices. Access `NetworkInterface` for PROFINET node configuration (IP address, subnet mask, device name). Walk from a CPU through its network interfaces to discover connected IO systems and SINAMICS devices.
+Network configuration in TIA Portal Openness covers DRIVE-CLiQ topology wiring, PROFINET interface configuration, and IO system traversal. Use `NetworkPort` services to connect and disconnect DRIVE-CLiQ links between devices. Access `NetworkInterface` for PROFINET node configuration (IP address, subnet mask, device name). Walk from a CPU through its network interfaces to discover connected IO systems and SINAMICS devices.
 
 ## Required Namespaces
 
@@ -28,9 +28,9 @@ using Siemens.Engineering.HW.Features;
 
 ## Common Patterns
 
-### Get NetworkPorts from DriveCliq Interface
+### Get NetworkPorts from DRIVE-CLiQ Interface
 
-**Description:** Extract all network ports from a DriveCliq interface device item. Navigate the device item hierarchy to locate the DriveCliq interface, then retrieve `NetworkPort` services.
+**Description:** Extract all network ports from a DRIVE-CLiQ interface device item. Navigate the device item hierarchy to locate the DRIVE-CLiQ interface, then retrieve `NetworkPort` services.
 
 **Example:**
 
@@ -69,7 +69,7 @@ foreach (var port in axisPorts)
 
 ### ConnectToPort
 
-**Description:** Connect two network ports together to establish a DriveCliq link.
+**Description:** Connect two network ports together to establish a DRIVE-CLiQ link.
 
 **Example:**
 
@@ -227,7 +227,7 @@ plcPort.ConnectToPort(drivePort);
 ## Related Files
 
 - [`drive-objects`](../drive-objects/SKILL.md) — SINAMICS devices found through network traversal expose DriveObjectContainer
-- [`hardware-and-modules`](../hardware-and-modules/SKILL.md) — hardware modules contain the network ports for DriveCliq wiring
+- [`hardware-and-modules`](../hardware-and-modules/SKILL.md) — hardware modules contain the network ports for DRIVE-CLiQ wiring
 - [`telegrams`](../telegrams/SKILL.md) — telegram addressing depends on the network topology and IO system assignment
 - [`safety-commissioning`](../safety-commissioning/SKILL.md) — PROFIsafe safety telegrams require PROFINET network configuration
 
