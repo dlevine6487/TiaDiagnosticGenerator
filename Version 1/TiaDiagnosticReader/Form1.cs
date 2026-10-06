@@ -50,12 +50,42 @@ namespace TiaDiagnosticGui
             txtOutput.ReadOnly = true;
             txtOutput.ScrollBars = RichTextBoxScrollBars.Vertical;
             txtOutput.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            txtOutput.Font = new System.Drawing.Font("Consolas", 8);
+            txtOutput.Font = new System.Drawing.Font("Consolas", 9);
 
             this.Controls.Add(btnConnect);
             this.Controls.Add(btnDisconnect);
             this.Controls.Add(btnExportCsv);
             this.Controls.Add(txtOutput);
+
+            // Apply Siemens iX Dark Theme
+            this.BackColor = System.Drawing.Color.FromArgb(18, 20, 25);
+            this.ForeColor = System.Drawing.Color.FromArgb(214, 219, 223);
+            this.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+
+            // Style Connect Button
+            btnConnect.FlatStyle = FlatStyle.Flat;
+            btnConnect.FlatAppearance.BorderSize = 0;
+            btnConnect.BackColor = System.Drawing.Color.FromArgb(0, 100, 110);
+            btnConnect.ForeColor = System.Drawing.Color.White;
+
+            // Style Disconnect Button
+            btnDisconnect.FlatStyle = FlatStyle.Flat;
+            btnDisconnect.FlatAppearance.BorderSize = 0;
+            btnDisconnect.BackColor = System.Drawing.Color.FromArgb(100, 110, 120); // Secondary
+            btnDisconnect.ForeColor = System.Drawing.Color.White;
+
+            // Style Export Button
+            btnExportCsv.FlatStyle = FlatStyle.Flat;
+            btnExportCsv.FlatAppearance.BorderSize = 0;
+            btnExportCsv.BackColor = System.Drawing.Color.FromArgb(0, 100, 110);
+            btnExportCsv.ForeColor = System.Drawing.Color.White;
+
+            // Style Text Box
+            txtOutput.BackColor = System.Drawing.Color.FromArgb(27, 30, 35);
+            txtOutput.ForeColor = System.Drawing.Color.FromArgb(214, 219, 223);
+            txtOutput.BorderStyle = BorderStyle.None;
+            txtOutput.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, 0);
+
         }
 
         private async void BtnConnect_Click(object? sender, EventArgs e)
